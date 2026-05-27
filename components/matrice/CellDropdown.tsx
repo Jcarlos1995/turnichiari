@@ -47,21 +47,27 @@ export function CellDropdown({ shiftTypes, violations, onSelect, onClose }: Cell
 
       <div className="border-t border-slate-100 my-1" />
       <p className="text-[10px] font-semibold text-slate-400 px-3 py-1 uppercase tracking-wide">Assenze</p>
-      {systemShifts.map(s => (
-        <button
-          key={s.code}
-          onClick={() => handleSelect(s.code)}
-          className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-slate-50"
-        >
-          <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: s.color }} />
-          <span className="text-slate-600">{s.code}</span>
-          <span className="text-slate-400 text-xs ml-1">{s.label}</span>
-        </button>
-      ))}
+      {systemShifts.map(s => {
+        const blocked = (violations[s.code]?.length ?? 0) > 0
+        return (
+          <button
+            key={s.code}
+            onClick={() => handleSelect(s.code)}
+            disabled={blocked}
+            className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-sm
+              ${blocked ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-50'}`}
+          >
+            <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: s.color }} />
+            <span className="text-slate-600">{s.code}</span>
+            <span className="text-slate-400 text-xs ml-1">{s.label}</span>
+            {blocked && <span className="text-red-400 text-xs">⚠</span>}
+          </button>
+        )
+      })}
 
       {allViolations.length > 0 && (
-        <div className="border-t border-slate-100 mx-2 my-1 p-2 bg-red-50 rounded text-xs text-red-700">
-          {allViolations[0].message}
+        <div className="border-t border-slate-100 mx-2 my-1 p-2 bg-red-50 rounded text-xs text-red-700 space-y-1">
+          {allViolations.map((v, i) => <p key={i}>{v.message}</p>)}
         </div>
       )}
 
