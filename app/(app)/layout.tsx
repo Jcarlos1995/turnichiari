@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { Topbar } from '@/components/layout/Topbar'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -23,6 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
+      <Topbar user={user} />
       <main className="flex-1 flex overflow-hidden">{children}</main>
     </div>
   )
