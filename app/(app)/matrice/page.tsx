@@ -1,13 +1,15 @@
 'use client'
-import { useState } from 'react'
 import { MatriceGrid } from '@/components/matrice/MatriceGrid'
 import { useAuth } from '@/hooks/useAuth'
 
+const today = new Date()
+const currentYear = today.getFullYear()
+const currentMonth = today.getMonth() + 1
+
 export default function MatricePage() {
   const { user } = useAuth()
-  const today = new Date()
-  const [year] = useState(today.getFullYear())
-  const [month] = useState(today.getMonth() + 1)
+  const year = currentYear
+  const month = currentMonth
 
   if (!user) return null
 
