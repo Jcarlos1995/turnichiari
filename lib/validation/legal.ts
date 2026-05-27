@@ -44,8 +44,7 @@ export function checkMinRestBetweenShifts(
   prevShift: ShiftType,
   nextShift: ShiftType
 ): LegalViolation | null {
-  if (prevShift.isSystem) return null
-  if (nextShift.isSystem) return null
+  if (prevShift.isSystem || nextShift.isSystem) return null
 
   const restMinutes = restMinutesBetween(prevShift, nextShift)
   const restHours = restMinutes / 60
@@ -94,15 +93,18 @@ export function checkWeeklyHours(shifts: ShiftType[]): LegalViolation | null {
 export function getViolationsForCell(
   prevShift: ShiftType | null,
   newShift: ShiftType,
-  weekCodes: string[]
+  weekShifts: ShiftType[]
 ): LegalViolation[] {
   const violations: LegalViolation[] = []
   if (prevShift) {
     const restViolation = checkMinRestBetweenShifts(prevShift, newShift)
     if (restViolation) violations.push(restViolation)
   }
-  // Check weekly rest with this new shift replacing the last code in the week
-  const weeklyViolation = checkWeeklyRest([...weekCodes.slice(0, -1), newShift.code])
-  if (weeklyViolation) violations.push(weeklyViolation)
+  const weekWithNew = [...weekShifts.slice(0, -1), newShift]
+  const weekCodes = weekWithNew.map(s => s.code)
+  const weeklyRestViolation = checkWeeklyRest(weekCodes)
+  if (weeklyRestViolation) violations.push(weeklyRestViolation)
+  const weeklyHoursViolation = checkWeeklyHours(weekWithNew)
+  if (weeklyHoursViolation) violations.push(weeklyHoursViolation)
   return violations
 }
