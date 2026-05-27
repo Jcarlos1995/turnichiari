@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth() { return request.auth != null; }
+    function role() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role; }
+    function isCoordinatrice() { return isAuth() && role() == 'coordinatrice'; }
+    function isRAA() { return isAuth() && role() == 'raa'; }
+    function isOSS() { return isAuth() && role() == 'oss'; }
+    function ownsNucleo(nucleoId) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.nucleoId == nucleoId;
+    }
+
+    // Users: read own profile; coordinatrice reads all
+    match /users/{userId} {
+      allow read: if isAuth() && (request.auth.uid == userId || isCoordinatrice());
+      allow write: if isCoordinatrice();
+    }
+
+    // Nuclei: all authenticated read; RAA writes own; coordinatrice writes all
+    match /nuclei/{nucleoId} {
+      allow read: if isAuth();
+      allow write: if isCoordinatrice() || (isRAA() && ownsNucleo(nucleoId));
+
+      // Operators
+      match /operators/{operatorId} {
+        allow read: if isAuth();
+        allow write: if isCoordinatrice() || (isRAA() && ownsNucleo(nucleoId));
+      }
+
+      // Matrice
+      match /matrice/{yearMonth} {
+        allow read: if isAuth();
+        allow write: if isCoordinatrice() || (isRAA() && ownsNucleo(nucleoId));
+      }
+
+      // Requests
+      match /requests/{requestId} {
+        allow read: if isAuth();
+        allow create: if isOSS();
+        allow update: if isCoordinatrice() || (isRAA() && ownsNucleo(nucleoId));
+      }
+    }
+
+    // Audit log: write only by functions; read by coordinatrice
+    match /audit/{logId} {
+      allow read: if isCoordinatrice();
+      allow write: if false;
+    }
+  }
+}
