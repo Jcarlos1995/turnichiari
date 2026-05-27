@@ -18,7 +18,9 @@ export async function signOut() {
 export async function getUserProfile(uid: string): Promise<AppUser | null> {
   const snap = await getDoc(doc(db, 'users', uid))
   if (!snap.exists()) return null
-  return { uid, ...snap.data() } as AppUser
+  const data = snap.data()
+  if (!data.role || !data.name || !data.email) return null
+  return { uid, email: data.email, name: data.name, role: data.role, nucleoId: data.nucleoId ?? null }
 }
 
 export { onAuthStateChanged, auth }

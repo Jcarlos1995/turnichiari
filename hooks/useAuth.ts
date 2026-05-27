@@ -1,4 +1,3 @@
-'use client'
 import { useState, useEffect } from 'react'
 import { auth, onAuthStateChanged, getUserProfile } from '@/lib/firebase/auth'
 import type { AppUser } from '@/lib/types'
@@ -8,16 +7,16 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let active = true
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const profile = await getUserProfile(firebaseUser.uid)
-        setUser(profile)
+        if (active) { setUser(profile); setLoading(false) }
       } else {
-        setUser(null)
+        if (active) { setUser(null); setLoading(false) }
       }
-      setLoading(false)
     })
-    return unsubscribe
+    return () => { active = false; unsubscribe() }
   }, [])
 
   return { user, loading }
