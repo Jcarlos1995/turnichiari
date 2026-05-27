@@ -18,7 +18,7 @@ export function Topbar({ user, nucleoName }: TopbarProps) {
     router.push('/login')
   }
 
-  const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  const initials = user.name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)
 
   return (
     <header className="h-12 bg-slate-900 flex items-center px-4 gap-4 flex-shrink-0">
