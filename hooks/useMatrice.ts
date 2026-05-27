@@ -9,9 +9,9 @@ export function useMatrice(nucleoId: string, yearMonth: string) {
 
   useEffect(() => {
     let active = true
-    getOperators(nucleoId).then(ops => {
-      if (active) { setOperators(ops); setLoading(false) }
-    })
+    getOperators(nucleoId)
+      .then(ops => { if (active) setOperators(ops) })
+      .finally(() => { if (active) setLoading(false) })
     const unsubscribe = subscribeMatrice(nucleoId, yearMonth, (data) => {
       if (active) setMatrice(data)
     })

@@ -8,7 +8,9 @@ export function useNucleo(nucleoId: string | null) {
 
   useEffect(() => {
     if (!nucleoId) { setLoading(false); return }
-    getNucleo(nucleoId).then(n => { setNucleo(n); setLoading(false) })
+    getNucleo(nucleoId)
+      .then(n => { setNucleo(n) })
+      .finally(() => { setLoading(false) })
   }, [nucleoId])
 
   const allShiftTypes: ShiftType[] = [
