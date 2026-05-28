@@ -5,7 +5,7 @@ import {
   type Unsubscribe
 } from 'firebase/firestore'
 import { db } from './config'
-import type { Nucleo, Operator, MatriceMonth, MatriceDayEntry } from '@/lib/types'
+import type { Nucleo, Operator, MatriceMonth, MatriceDayEntry, ContractType } from '@/lib/types'
 
 export async function getNucleo(nucleoId: string): Promise<Nucleo | null> {
   const snap = await getDoc(doc(db, 'nuclei', nucleoId))
@@ -94,4 +94,102 @@ export async function updateOperatorCycle(
 ): Promise<void> {
   const ref = doc(db, 'nuclei', nucleoId, 'operators', operatorId)
   await setDoc(ref, { cycle, cyclePhase, cycleMonth }, { merge: true })
+}
+
+/**
+ * Subscribes to real-time updates of active operators in a nucleo.
+ * Returns an unsubscribe function.
+ */
+export function subscribeOperators(
+  nucleoId: string,
+  callback: (operators: Operator[]) => void
+): Unsubscribe {
+  const q = query(
+    collection(db, 'nuclei', nucleoId, 'operators'),
+    where('active', '==', true),
+    orderBy('name')
+  )
+  return onSnapshot(q, snap => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Operator))
+  })
+}
+
+/**
+ * Returns all nuclei — used for Coordinatrice's nucleo selection dropdown.
+ */
+export async function listNuclei(): Promise<Nucleo[]> {
+  const snap = await getDocs(collection(db, 'nuclei'))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Nucleo)
+}
+
+/**
+ * Registers a new operator:
+ * 1. Generates username (cognome[0:5] + nome[0:3])
+ * 2. Creates Firebase Auth account via secondary app (retries up to 9x on collision)
+ * 3. Writes users/{uid} and nuclei/{nucleoId}/operators/{uid}
+ *
+ * Throws if all 9 username variants are already taken.
+ */
+export async function createOperator(
+  nucleoId: string,
+  data: {
+    nome: string
+    cognome: string
+    contractType: ContractType
+    hasFSCertification: boolean
+  }
+): Promise<{ uid: string; username: string }> {
+  const { generateUsername } = await import('@/lib/utils/username')
+  const { createAuthUserSecondary } = await import('./createUserSecondary')
+
+  const baseUsername = generateUsername(data.nome, data.cognome)
+
+  let uid: string | null = null
+  let finalUsername: string | null = null
+
+  for (let attempt = 0; attempt <= 9; attempt++) {
+    const username = attempt === 0 ? baseUsername : `${baseUsername}${attempt}`
+    const email = `${username}@turnichiari.it`
+    try {
+      uid = await createAuthUserSecondary(email, username)
+      finalUsername = username
+      break
+    } catch (e: unknown) {
+      const code = (e as { code?: string }).code
+      if (code === 'auth/email-already-in-use') {
+        if (attempt === 9) {
+          throw new Error(
+            'Username già in uso dopo 9 tentativi. Modifica nome o cognome.'
+          )
+        }
+        continue
+      }
+      throw e  // re-throw unexpected errors
+    }
+  }
+
+  if (!uid || !finalUsername) throw new Error('Impossibile creare il profilo.')
+
+  const name = `${data.cognome} ${data.nome}`
+  const email = `${finalUsername}@turnichiari.it`
+
+  // Write user profile (role: 'oss')
+  await setDoc(doc(db, 'users', uid), {
+    email,
+    name,
+    role: 'oss',
+    nucleoId,
+  })
+
+  // Write operator document in the nucleo
+  await setDoc(doc(db, 'nuclei', nucleoId, 'operators', uid), {
+    id: uid,
+    name,
+    nucleoId,
+    contractType: data.contractType,
+    active: true,
+    hasFSCertification: data.hasFSCertification,
+  })
+
+  return { uid, username: finalUsername }
 }
