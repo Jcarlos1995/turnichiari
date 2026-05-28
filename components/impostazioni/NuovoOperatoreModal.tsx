@@ -43,6 +43,27 @@ export function NuovoOperatoreModal({
     return () => window.removeEventListener('keydown', handleEsc)
   }, [loading, onClose])
 
+  // Focus trap: keep focus within modal while open
+  useEffect(() => {
+    const modal = document.getElementById('nuovo-operatore-modal')
+    if (!modal) return
+    const focusableSelectors = 'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    const focusable = Array.from(modal.querySelectorAll<HTMLElement>(focusableSelectors))
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    function handleTab(e: KeyboardEvent) {
+      if (e.key !== 'Tab') return
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus() }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus() }
+      }
+    }
+    modal.addEventListener('keydown', handleTab)
+    return () => modal.removeEventListener('keydown', handleTab)
+  }, [])
+
   // Live username preview (updates as user types)
   const username = cognome.trim() && nome.trim()
     ? generateUsername(nome.trim(), cognome.trim())
@@ -75,7 +96,7 @@ export function NuovoOperatoreModal({
       className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
       onClick={(e) => { if (e.target === e.currentTarget && !loading) onClose() }}
     >
-      <div role="dialog" aria-modal="true" aria-labelledby="modal-title" className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+      <div id="nuovo-operatore-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
         <h2 id="modal-title" className="text-base font-bold text-slate-900 mb-4">Nuovo operatore</h2>
 
         <form onSubmit={handleSubmit} className="space-y-3">

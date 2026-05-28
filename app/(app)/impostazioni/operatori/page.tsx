@@ -11,10 +11,10 @@ export default function OperatoriPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
 
-  const nucleoId = user?.nucleoId ?? 'nucleo-b'
+  const nucleoId = user?.nucleoId
 
   useEffect(() => {
-    if (!user || user.role === 'oss') return
+    if (!user || user.role === 'oss' || !nucleoId) return
     setLoading(true)
     const unsub = subscribeOperators(nucleoId, ops => {
       setOperators(ops)
@@ -25,6 +25,10 @@ export default function OperatoriPage() {
 
   if (!user || user.role === 'oss') {
     return <div className="p-6 text-sm text-slate-500">Accesso non autorizzato.</div>
+  }
+
+  if (!nucleoId) {
+    return <div className="p-6 text-sm text-slate-500">Seleziona un nucleo dalla matrice per gestire gli operatori.</div>
   }
 
   if (loading) {
@@ -79,7 +83,7 @@ export default function OperatoriPage() {
       </div>
 
       {/* Modal */}
-      {showModal && user && (
+      {showModal && user && nucleoId && (
         <NuovoOperatoreModal
           nucleoId={nucleoId}
           currentUser={user}

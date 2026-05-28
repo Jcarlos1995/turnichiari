@@ -144,6 +144,10 @@ export async function createOperator(
 
   const baseUsername = generateUsername(data.nome, data.cognome)
 
+  if (baseUsername.length === 0) {
+    throw new Error('Nome o cognome non contengono lettere valide (a-z).')
+  }
+
   let uid: string | null = null
   let finalUsername: string | null = null
 
@@ -173,7 +177,10 @@ export async function createOperator(
   const name = `${data.cognome} ${data.nome}`
   const email = `${finalUsername}@turnichiari.it`
 
-  // Atomic write: both user profile and operator doc succeed or both fail
+  // NOTE: Non-atomic between Auth and Firestore — if the batch below fails,
+  // the Auth account will be orphaned and must be manually deleted from the
+  // Firebase Console (Authentication tab, find by email). A future Cloud
+  // Function implementation would fix this by using a single transaction.
   const batch = writeBatch(db)
   batch.set(doc(db, 'users', uid), {
     email,
@@ -189,7 +196,14 @@ export async function createOperator(
     active: true,
     hasFSCertification: data.hasFSCertification,
   })
-  await batch.commit()
+  try {
+    await batch.commit()
+  } catch (e) {
+    throw new Error(
+      `Profilo Auth creato (uid: ${uid}) ma registrazione Firestore fallita. ` +
+      `Eliminare manualmente l'account dalla Firebase Console.`
+    )
+  }
 
   return { uid, username: finalUsername }
 }
