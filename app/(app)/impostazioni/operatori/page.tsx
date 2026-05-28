@@ -14,7 +14,7 @@ export default function OperatoriPage() {
   const nucleoId = user?.nucleoId ?? 'nucleo-b'
 
   useEffect(() => {
-    if (!user) return
+    if (!user || user.role === 'oss') return
     setLoading(true)
     const unsub = subscribeOperators(nucleoId, ops => {
       setOperators(ops)
