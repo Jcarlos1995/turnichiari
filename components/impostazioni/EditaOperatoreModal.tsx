@@ -32,6 +32,27 @@ export function EditaOperatoreModal({
     return () => window.removeEventListener('keydown', handleEsc)
   }, [loading, onClose])
 
+  // Focus trap
+  useEffect(() => {
+    const modal = document.getElementById('edita-operatore-modal')
+    if (!modal) return
+    const focusableSelectors = 'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    const focusable = Array.from(modal.querySelectorAll<HTMLElement>(focusableSelectors))
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    function handleTab(e: KeyboardEvent) {
+      if (e.key !== 'Tab') return
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus() }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus() }
+      }
+    }
+    modal.addEventListener('keydown', handleTab)
+    return () => modal.removeEventListener('keydown', handleTab)
+  }, [])
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) return
