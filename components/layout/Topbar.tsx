@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signOut } from '@/lib/firebase/auth'
 import { Button } from '@/components/ui/button'
@@ -34,10 +35,24 @@ export function Topbar({ user, nucleoName }: TopbarProps) {
         <span className="text-slate-400 text-xs">{nucleoName ?? 'Nucleo B'}</span>
       )}
       <div className="ml-auto flex items-center gap-3">
-        <span className="text-slate-400 text-xs">{user.name}</span>
-        <Avatar className="h-7 w-7 cursor-pointer" onClick={handleSignOut}>
+        {user.role !== 'oss' && (
+          <Link
+            href="/impostazioni/cicli"
+            className="text-xs text-slate-400 hover:text-white transition-colors"
+          >
+            Impostazioni
+          </Link>
+        )}
+        <span className="text-slate-400 text-xs hidden sm:block">{user.name}</span>
+        <Avatar className="h-7 w-7">
           <AvatarFallback className="bg-slate-700 text-white text-xs">{initials}</AvatarFallback>
         </Avatar>
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-1 text-xs text-slate-400 hover:text-white border border-slate-700 hover:border-slate-500 rounded px-2 py-1 transition-colors"
+        >
+          <span>Esci</span>
+        </button>
       </div>
     </header>
   )
