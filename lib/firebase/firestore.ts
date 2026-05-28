@@ -97,18 +97,22 @@ export async function updateOperatorCycle(
 }
 
 /**
- * Subscribes to real-time updates of active operators in a nucleo.
- * Returns an unsubscribe function.
+ * Subscribes to real-time updates of operators in a nucleo.
+ * By default only returns active operators.
+ * Pass includeInactive = true to return all operators (active + inactive).
  */
 export function subscribeOperators(
   nucleoId: string,
-  callback: (operators: Operator[]) => void
+  callback: (operators: Operator[]) => void,
+  includeInactive = false
 ): Unsubscribe {
-  const q = query(
-    collection(db, 'nuclei', nucleoId, 'operators'),
-    where('active', '==', true),
-    orderBy('name')
-  )
+  const q = includeInactive
+    ? query(collection(db, 'nuclei', nucleoId, 'operators'), orderBy('name'))
+    : query(
+        collection(db, 'nuclei', nucleoId, 'operators'),
+        where('active', '==', true),
+        orderBy('name')
+      )
   return onSnapshot(q, snap => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Operator))
   })
@@ -206,4 +210,32 @@ export async function createOperator(
   }
 
   return { uid, username: finalUsername }
+}
+
+/**
+ * Updates an operator's editable fields.
+ * - Updates nuclei/{nucleoId}/operators/{uid} with all provided fields.
+ * - If name is provided, also updates users/{uid}.name atomically (writeBatch).
+ */
+export async function updateOperator(
+  nucleoId: string,
+  uid: string,
+  data: {
+    name?: string
+    contractType?: ContractType
+    hasFSCertification?: boolean
+    active?: boolean
+  }
+): Promise<void> {
+  const batch = writeBatch(db)
+
+  // Always update the operator document
+  batch.set(doc(db, 'nuclei', nucleoId, 'operators', uid), data, { merge: true })
+
+  // Sync name to users/{uid} if name is being changed
+  if (data.name !== undefined) {
+    batch.set(doc(db, 'users', uid), { name: data.name }, { merge: true })
+  }
+
+  await batch.commit()
 }
