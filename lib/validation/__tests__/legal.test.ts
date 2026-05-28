@@ -32,6 +32,27 @@ describe('checkMinRestBetweenShifts', () => {
   })
 })
 
+const N1: ShiftType = { code: 'N1', label: 'Notte 1', startTime: '21:00', endTime: '00:00', color: '#dbeafe', operatorsPerDay: 1, isPartTime: false, isSystem: false }
+const N2: ShiftType = { code: 'N2', label: 'Notte 2', startTime: '00:00', endTime: '06:30', color: '#bfdbfe', operatorsPerDay: 1, isPartTime: false, isSystem: false }
+
+describe('N1→N2 special case', () => {
+  it('N1 followed by N2 is valid (same continuous night shift, no rest required)', () => {
+    const violation = checkMinRestBetweenShifts(N1, N2)
+    expect(violation).toBeNull()
+  })
+
+  it('N2 followed by M1 triggers 11h violation (06:30 to 06:30 next day = 0h rest)', () => {
+    const violation = checkMinRestBetweenShifts(N2, M1)
+    expect(violation).not.toBeNull()
+    expect(violation?.rule).toBe('MIN_REST_11H')
+  })
+
+  it('N2 followed by P2 is valid (06:30 to 14:30 next day = 32h rest)', () => {
+    const violation = checkMinRestBetweenShifts(N2, P2)
+    expect(violation).toBeNull()
+  })
+})
+
 describe('checkWeeklyRest', () => {
   it('passes when at least 1 R in 7 days', () => {
     const week = ['M1','M1','R','M1','M1','P2','M1']

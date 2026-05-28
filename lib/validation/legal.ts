@@ -46,6 +46,9 @@ export function checkMinRestBetweenShifts(
 ): LegalViolation | null {
   if (prevShift.isSystem || nextShift.isSystem) return null
 
+  // N1→N2 is one continuous night shift crossing midnight — no rest check needed
+  if (prevShift.code === 'N1' && nextShift.code === 'N2') return null
+
   const restMinutes = restMinutesBetween(prevShift, nextShift)
   const restHours = restMinutes / 60
   const MIN_HOURS = 11
