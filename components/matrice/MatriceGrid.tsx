@@ -5,22 +5,28 @@ import { DayHeader } from './DayHeader'
 import { useMatrice } from '@/hooks/useMatrice'
 import { useNucleo } from '@/hooks/useNucleo'
 import { updateMatriceCell } from '@/lib/firebase/firestore'
-import type { AppUser } from '@/lib/types'
+import type { AppUser, Operator, MatriceMonth } from '@/lib/types'
 
 interface MatriceGridProps {
   nucleoId: string
   year: number
   month: number
   currentUser: AppUser
+  onDataReady?: (operators: Operator[], matrice: MatriceMonth) => void
 }
 
-export function MatriceGrid({ nucleoId, year, month, currentUser }: MatriceGridProps) {
+export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }: MatriceGridProps) {
   const yearMonth = `${year}-${String(month).padStart(2, '0')}`
   const { matrice, operators, loading: matriceLoading } = useMatrice(nucleoId, yearMonth)
   const { allShiftTypes, loading: nucleoLoading } = useNucleo(nucleoId)
   const today = new Date()
   const daysInMonth = new Date(year, month, 0).getDate()
   const canEdit = currentUser.role === 'raa' || currentUser.role === 'coordinatrice'
+
+  // Notify parent when data is available
+  if (!matriceLoading && !nucleoLoading && onDataReady) {
+    onDataReady(operators, matrice)
+  }
 
   const handleCellSelect = useCallback(async (
     operatorId: string,
