@@ -1,7 +1,7 @@
 import {
   doc, getDoc, setDoc, getDocs,
   collection, query, where, orderBy,
-  onSnapshot,
+  onSnapshot, writeBatch,
   type Unsubscribe
 } from 'firebase/firestore'
 import { db } from './config'
@@ -173,16 +173,15 @@ export async function createOperator(
   const name = `${data.cognome} ${data.nome}`
   const email = `${finalUsername}@turnichiari.it`
 
-  // Write user profile (role: 'oss')
-  await setDoc(doc(db, 'users', uid), {
+  // Atomic write: both user profile and operator doc succeed or both fail
+  const batch = writeBatch(db)
+  batch.set(doc(db, 'users', uid), {
     email,
     name,
     role: 'oss',
     nucleoId,
   })
-
-  // Write operator document in the nucleo
-  await setDoc(doc(db, 'nuclei', nucleoId, 'operators', uid), {
+  batch.set(doc(db, 'nuclei', nucleoId, 'operators', uid), {
     id: uid,
     name,
     nucleoId,
@@ -190,6 +189,7 @@ export async function createOperator(
     active: true,
     hasFSCertification: data.hasFSCertification,
   })
+  await batch.commit()
 
   return { uid, username: finalUsername }
 }
