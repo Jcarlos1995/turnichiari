@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { useMatrice } from '@/hooks/useMatrice'
 import { CicloOperatoreRow } from '@/components/impostazioni/CicloOperatoreRow'
@@ -30,6 +31,13 @@ export default function CicliPage() {
 
   return (
     <div className="flex-1 overflow-auto p-6 max-w-4xl">
+      <Link
+        href="/matrice"
+        className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 transition-colors mb-4"
+      >
+        ← Matrice
+      </Link>
+
       <h1 className="text-lg font-bold text-slate-900 mb-1">Configurazione cicli turni</h1>
       <p className="text-sm text-slate-500 mb-6">
         Imposta il ciclo di rotazione e la fase di partenza per ogni operatore.
