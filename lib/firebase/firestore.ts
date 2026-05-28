@@ -46,3 +46,52 @@ export async function updateMatriceCell(
     [operatorId]: { [day]: entry }
   }, { merge: true })
 }
+
+/**
+ * Bulk-writes generated shift entries for a month.
+ * Only writes cells that are currently absent from existingMatrice.
+ * Each entry is marked with isManualOverride: false.
+ */
+export async function bulkUpdateMatrice(
+  nucleoId: string,
+  yearMonth: string,
+  generated: Record<string, Record<number, string>>,  // { operatorId: { day: shiftCode } }
+  existingMatrice: MatriceMonth
+): Promise<void> {
+  const ref = doc(db, 'nuclei', nucleoId, 'matrice', yearMonth)
+
+  const updates: Record<string, Record<number, MatriceDayEntry>> = {}
+
+  for (const [operatorId, dayMap] of Object.entries(generated)) {
+    const existing = existingMatrice[operatorId] ?? {}
+    for (const [dayStr, code] of Object.entries(dayMap)) {
+      const day = Number(dayStr)
+      if (!existing[day]) {
+        if (!updates[operatorId]) updates[operatorId] = {}
+        updates[operatorId][day] = {
+          code,
+          updatedAt: Date.now(),
+          isManualOverride: false,
+        }
+      }
+    }
+  }
+
+  if (Object.keys(updates).length === 0) return
+
+  await setDoc(ref, updates, { merge: true })
+}
+
+/**
+ * Saves an operator's cycle configuration and current month phase.
+ */
+export async function updateOperatorCycle(
+  nucleoId: string,
+  operatorId: string,
+  cycle: string[],
+  cyclePhase: number,
+  cycleMonth: string
+): Promise<void> {
+  const ref = doc(db, 'nuclei', nucleoId, 'operators', operatorId)
+  await setDoc(ref, { cycle, cyclePhase, cycleMonth }, { merge: true })
+}
