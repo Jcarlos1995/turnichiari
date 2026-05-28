@@ -28,9 +28,20 @@ export function NuovoOperatoreModal({
   // Fetch nucleo list for coordinatrice dropdown
   useEffect(() => {
     if (isCoordinatrice) {
-      listNuclei().then(setNuclei)
+      listNuclei().then(setNuclei).catch(() => {
+        // silently fall back to raw nucleoId if fetch fails
+      })
     }
   }, [isCoordinatrice])
+
+  // Close modal on ESC key
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !loading) onClose()
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [loading, onClose])
 
   // Live username preview (updates as user types)
   const username = cognome.trim() && nome.trim()
@@ -60,15 +71,19 @@ export function NuovoOperatoreModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
-        <h2 className="text-base font-bold text-slate-900 mb-4">Nuovo operatore</h2>
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={(e) => { if (e.target === e.currentTarget && !loading) onClose() }}
+    >
+      <div role="dialog" aria-modal="true" aria-labelledby="modal-title" className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+        <h2 id="modal-title" className="text-base font-bold text-slate-900 mb-4">Nuovo operatore</h2>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* Cognome */}
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Cognome *</label>
+            <label htmlFor="cognome" className="block text-xs font-medium text-slate-700 mb-1">Cognome *</label>
             <input
+              id="cognome"
               value={cognome}
               onChange={e => setCognome(e.target.value)}
               required
@@ -80,8 +95,9 @@ export function NuovoOperatoreModal({
 
           {/* Nome */}
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Nome *</label>
+            <label htmlFor="nome" className="block text-xs font-medium text-slate-700 mb-1">Nome *</label>
             <input
+              id="nome"
               value={nome}
               onChange={e => setNome(e.target.value)}
               required
@@ -156,7 +172,7 @@ export function NuovoOperatoreModal({
 
           {/* Error */}
           {error && (
-            <p className="text-xs text-red-600 bg-red-50 rounded p-2">{error}</p>
+            <p role="alert" className="text-xs text-red-600 bg-red-50 rounded p-2">{error}</p>
           )}
 
           {/* Actions */}
