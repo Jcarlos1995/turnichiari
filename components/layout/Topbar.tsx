@@ -36,12 +36,20 @@ export function Topbar({ user, nucleoName }: TopbarProps) {
       )}
       <div className="ml-auto flex items-center gap-3">
         {user.role !== 'oss' && (
-          <Link
-            href="/impostazioni/cicli"
-            className="text-xs text-slate-400 hover:text-white transition-colors"
-          >
-            Impostazioni
-          </Link>
+          <>
+            <Link
+              href="/impostazioni/operatori"
+              className="text-xs text-slate-400 hover:text-white transition-colors"
+            >
+              Operatori
+            </Link>
+            <Link
+              href="/impostazioni/cicli"
+              className="text-xs text-slate-400 hover:text-white transition-colors"
+            >
+              Impostazioni
+            </Link>
+          </>
         )}
         <span className="text-slate-400 text-xs hidden sm:block">{user.name}</span>
         <Avatar className="h-7 w-7">
