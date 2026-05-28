@@ -24,7 +24,15 @@ service cloud.firestore {
         'role' in request.resource.data &&
         request.resource.data.role == 'oss' &&
         canWrite(request.resource.data.nucleoId);
-      allow update, delete: if isCoordinatrice();
+      // RAA can update only the name field for OSS operators in their nucleo
+      allow update: if isCoordinatrice() ||
+        (isAuth() &&
+         'nucleoId' in resource.data &&
+         'role' in resource.data &&
+         resource.data.role == 'oss' &&
+         canWrite(resource.data.nucleoId) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']));
+      allow delete: if isCoordinatrice();
     }
 
     // Nuclei: all authenticated read; RAA writes own; coordinatrice writes all
