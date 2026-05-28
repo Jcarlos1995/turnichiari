@@ -1,5 +1,5 @@
 'use client'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { MatriceRow } from './MatriceRow'
 import { DayHeader } from './DayHeader'
 import { useMatrice } from '@/hooks/useMatrice'
@@ -23,10 +23,11 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }:
   const daysInMonth = new Date(year, month, 0).getDate()
   const canEdit = currentUser.role === 'raa' || currentUser.role === 'coordinatrice'
 
-  // Notify parent when data is available
-  if (!matriceLoading && !nucleoLoading && onDataReady) {
-    onDataReady(operators, matrice)
-  }
+  useEffect(() => {
+    if (!matriceLoading && !nucleoLoading && onDataReady) {
+      onDataReady(operators, matrice)
+    }
+  }, [operators, matrice, matriceLoading, nucleoLoading, onDataReady])
 
   const handleCellSelect = useCallback(async (
     operatorId: string,

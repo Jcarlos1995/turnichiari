@@ -25,13 +25,15 @@ export function GeneraMeseModal({
   const monthLabel = new Date(year, month - 1).toLocaleString('it-IT', { month: 'long', year: 'numeric' })
 
   const fulltimeOps = operators.filter(op =>
-    op.contractType === 'fulltime' && op.cycle && op.cyclePhase !== undefined
+    (op.contractType === 'fulltime' || op.contractType === 'standard') &&
+    op.cycle && op.cyclePhase !== undefined
   )
   const parttimeOps = operators.filter(op =>
     op.contractType === 'parttime' && op.weeklyPattern
   )
   const unconfigured = operators.filter(op =>
-    (op.contractType === 'fulltime' && (!op.cycle || op.cyclePhase === undefined)) ||
+    ((op.contractType === 'fulltime' || op.contractType === 'standard') &&
+     (!op.cycle || op.cyclePhase === undefined)) ||
     (op.contractType === 'parttime' && !op.weeklyPattern)
   )
 

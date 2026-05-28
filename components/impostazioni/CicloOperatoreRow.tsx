@@ -27,15 +27,16 @@ export function CicloOperatoreRow({ operator, nucleoId, currentYearMonth }: Cicl
   )
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   async function handleSave() {
     setSaving(true)
     setSaved(false)
+    setSaveError(null)
     try {
       if (isFulltime) {
         await updateOperatorCycle(nucleoId, operator.id, cycle, phase, currentYearMonth)
       } else {
-        await updateOperatorCycle(nucleoId, operator.id, weeklyPattern, 0, currentYearMonth)
         const { doc, setDoc } = await import('firebase/firestore')
         const { db } = await import('@/lib/firebase/config')
         await setDoc(
@@ -46,6 +47,9 @@ export function CicloOperatoreRow({ operator, nucleoId, currentYearMonth }: Cicl
       }
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
+    } catch (e) {
+      setSaveError('Errore nel salvataggio. Riprova.')
+      console.error(e)
     } finally {
       setSaving(false)
     }
