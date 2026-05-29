@@ -140,13 +140,14 @@ export function MatriceGrid({
 
   return (
     <div className="flex-1 overflow-auto p-3" onMouseLeave={handleCellLeave}>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
       {weeks.map((weekDays, wi) => {
         const weekSorted = sortForWeek(weekDays)
         const weekHasAutosost = showAutosostRow && weekDays.some(
           d => (remainingByDay[d]?.length ?? 0) > 0 || (assignmentsByDay[d]?.length ?? 0) > 0
         )
         return (
-          <div key={wi} className="border border-slate-200 rounded-xl bg-white shadow-sm p-3 mb-5 overflow-x-auto">
+          <div key={wi} className="border border-slate-200 rounded-xl bg-white shadow-sm p-3 overflow-x-auto">
             <div
               className="grid gap-1"
               style={{ gridTemplateColumns: `160px repeat(${weekDays.length}, minmax(36px, 1fr))` }}
@@ -216,6 +217,7 @@ export function MatriceGrid({
           </div>
         )
       })}
+      </div>
     </div>
   )
 }
