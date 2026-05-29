@@ -303,3 +303,32 @@ export async function clearNightSmonto(
 
   await batch.commit()
 }
+
+export interface BancaOreEntry {
+  manualAdjust: number
+  closing: number
+}
+export type BancaOreMonthDoc = Record<string, BancaOreEntry>
+
+/** Reads the banca-ore document for a month. Returns {} if it doesn't exist. */
+export async function getBancaOreMonth(
+  nucleoId: string,
+  yearMonth: string
+): Promise<BancaOreMonthDoc> {
+  const snap = await getDoc(doc(db, 'nuclei', nucleoId, 'bancaOre', yearMonth))
+  return snap.exists() ? (snap.data() as BancaOreMonthDoc) : {}
+}
+
+/** Merges one operator's banca-ore entry (manualAdjust and/or closing) for a month. */
+export async function setBancaOreEntry(
+  nucleoId: string,
+  yearMonth: string,
+  operatorId: string,
+  data: Partial<BancaOreEntry>
+): Promise<void> {
+  await setDoc(
+    doc(db, 'nuclei', nucleoId, 'bancaOre', yearMonth),
+    { [operatorId]: data },
+    { merge: true }
+  )
+}
