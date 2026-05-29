@@ -9,16 +9,18 @@ interface NuovoOperatoreModalProps {
   currentUser: AppUser
   onClose: () => void
   onCreated: () => void
+  defaultAutosostituzione?: boolean
 }
 
 export function NuovoOperatoreModal({
-  nucleoId, currentUser, onClose, onCreated,
+  nucleoId, currentUser, onClose, onCreated, defaultAutosostituzione = false,
 }: NuovoOperatoreModalProps) {
   const [cognome, setCognome] = useState('')
   const [nome, setNome] = useState('')
   const [contractType, setContractType] = useState<ContractType>('fulltime')
   const [selectedNucleoId, setSelectedNucleoId] = useState(nucleoId)
   const [hasFSCertification, setHasFSCertification] = useState(false)
+  const [isAutosostituzione, setIsAutosostituzione] = useState(defaultAutosostituzione)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [nuclei, setNuclei] = useState<Nucleo[]>([])
@@ -81,6 +83,7 @@ export function NuovoOperatoreModal({
         cognome: cognome.trim(),
         contractType,
         hasFSCertification,
+        isAutosostituzione,
       })
       onCreated()
       onClose()
@@ -170,6 +173,20 @@ export function NuovoOperatoreModal({
             />
             <label htmlFor="fsCert" className="text-xs text-slate-700">
               Certificazione antincendio ★
+            </label>
+          </div>
+
+          {/* Autosostituzione */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isAuto"
+              checked={isAutosostituzione}
+              onChange={e => setIsAutosostituzione(e.target.checked)}
+              className="w-4 h-4 rounded border-slate-300 accent-pink-600"
+            />
+            <label htmlFor="isAuto" className="text-xs text-slate-700">
+              Operatore di autosostituzione (jolly)
             </label>
           </div>
 

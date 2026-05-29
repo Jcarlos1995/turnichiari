@@ -145,6 +145,7 @@ export async function createOperator(
     cognome: string
     contractType: ContractType
     hasFSCertification: boolean
+    isAutosostituzione?: boolean
   }
 ): Promise<{ uid: string; username: string }> {
   const { generateUsername } = await import('@/lib/utils/username')
@@ -196,14 +197,23 @@ export async function createOperator(
     role: 'oss',
     nucleoId,
   })
-  batch.set(doc(db, 'nuclei', nucleoId, 'operators', uid), {
-    id: uid,
-    name,
-    nucleoId,
-    contractType: data.contractType,
-    active: true,
-    hasFSCertification: data.hasFSCertification,
-  })
+  if (data.isAutosostituzione) {
+    // Operatore jolly: va nel pool condiviso (cross-nucleo), NON tra gli operatori
+    // del nucleo, così non entra nella rotazione/generazione automatica.
+    batch.set(doc(db, 'autosostituzione', uid), {
+      name,
+      username: finalUsername,
+    })
+  } else {
+    batch.set(doc(db, 'nuclei', nucleoId, 'operators', uid), {
+      id: uid,
+      name,
+      nucleoId,
+      contractType: data.contractType,
+      active: true,
+      hasFSCertification: data.hasFSCertification,
+    })
+  }
   try {
     await batch.commit()
   } catch (e) {
