@@ -29,6 +29,8 @@ export const SYSTEM_SHIFTS: ShiftType[] = [
   { code: 'INF', label: 'Infortunio',  startTime: '', endTime: '', color: '#fff7ed', operatorsPerDay: 0, isPartTime: false, isSystem: true },
   { code: 'LU',  label: 'Lutto',       startTime: '', endTime: '', color: '#f4f4f5', operatorsPerDay: 0, isPartTime: false, isSystem: true },
   { code: 'AS',  label: 'Aspettativa', startTime: '', endTime: '', color: '#fafaf9', operatorsPerDay: 0, isPartTime: false, isSystem: true },
+  { code: 'BO',  label: 'Recupero banca ore', startTime: '', endTime: '', color: '#e0f2fe', operatorsPerDay: 0, isPartTime: false, isSystem: true },
+  { code: 'RC',  label: 'Riposo compensativo', startTime: '', endTime: '', color: '#cffafe', operatorsPerDay: 0, isPartTime: false, isSystem: true },
 ]
 
 /** Default 6-position cycle. Positions 1–3 can be overridden per operator. */
