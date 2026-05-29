@@ -83,6 +83,19 @@ describe('generateNuovaMatrice', () => {
     }
   })
 
+  it('places ptFixed cells and counts them toward coverage', () => {
+    // 1 PT fisso con P2 il giorno 1; gli altri FT coprono il resto.
+    const operators = [...ops(12, 0), { id: 'pt0', contractType: 'parttime' as ContractType }]
+    const { matrice } = generateNuovaMatrice({
+      operators, year: 2026, month: 6, exceptions: [], shiftCatalog: CATALOG,
+      ptFixed: { pt0: { 1: 'P2' } },
+    })
+    // il PT mantiene il suo turno fisso
+    expect(matrice.pt0[1]).toBe('P2')
+    // copertura P2 totale del giorno 1 = 2 (incluso il PT), non 3
+    expect(countOnDay(matrice, 1, 'P2')).toBe(2)
+  })
+
   it('reports uncovered slots when staff is insufficient', () => {
     const { report } = generateNuovaMatrice({
       operators: ops(2, 0), year: 2026, month: 6, exceptions: [], shiftCatalog: CATALOG,

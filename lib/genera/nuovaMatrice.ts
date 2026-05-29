@@ -29,8 +29,9 @@ export function generateNuovaMatrice(params: {
   month: number
   exceptions: ExceptionRange[]
   shiftCatalog: ShiftType[]
+  ptFixed?: Record<string, Record<number, string>>
 }): GenerationOutput {
-  const { operators, year, month, exceptions, shiftCatalog } = params
+  const { operators, year, month, exceptions, shiftCatalog, ptFixed } = params
   const N = getDaysInMonth(year, month)
 
   const typeByCode: Record<string, ShiftType> = {}
@@ -93,6 +94,17 @@ export function generateNuovaMatrice(params: {
     return weekHours[op.id][wi] - weekTarget(op, wi) // più negativo = più "in debito"
   }
 
+  // Pre-piazza l'orario fisso dei part-time (eccezioni PT già sovrapposte a monte).
+  // Questi turni contano per la copertura; i PT non verranno più scelti automaticamente.
+  if (ptFixed) {
+    for (const [opId, days] of Object.entries(ptFixed)) {
+      if (!assigned[opId]) continue
+      for (const [dayStr, code] of Object.entries(days)) {
+        placeWork(opId, Number(dayStr), code)
+      }
+    }
+  }
+
   const uncovered: UncoveredSlot[] = []
 
   for (let d = 1; d <= N; d++) {
@@ -126,11 +138,11 @@ export function generateNuovaMatrice(params: {
       uncovered.push({ day: d, shift: 'Notte', missing: 1 })
     }
 
-    // 3. posti di giorno
+    // 3. posti di giorno (conta chi è GIÀ su quel turno — es. part-time fisso)
     for (const shift of DAY_SLOT_ORDER) {
       const need = DAY_COVERAGE[shift]
-      let filled = 0
-      for (let slot = 0; slot < need; slot++) {
+      let filled = operators.filter(op => assigned[op.id][d] === shift).length
+      while (filled < need) {
         const candidates = operators.filter(op => legalOk(op, d, shift))
         if (!candidates.length) break
         candidates.sort((a, b) => {
