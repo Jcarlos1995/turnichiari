@@ -8,6 +8,8 @@ import { db } from './config'
 import type { Nucleo, Operator, MatriceMonth, MatriceDayEntry, ContractType } from '@/lib/types'
 import { NIGHT, nextSmontoTarget } from '@/lib/shifts/nightShift'
 import type { GenerationReport } from '@/lib/genera/nuovaMatrice'
+import { weeksOfMonth } from '@/lib/bancaore/bancaOre'
+import { continueStartPhase, type PtPhase } from '@/lib/genera/ptSchedule'
 
 export async function getNucleo(nucleoId: string): Promise<Nucleo | null> {
   const snap = await getDoc(doc(db, 'nuclei', nucleoId))
@@ -371,4 +373,54 @@ export async function getGenerationReport(
 ): Promise<GenerationReport> {
   const snap = await getDoc(doc(db, 'nuclei', nucleoId, 'matriceMeta', yearMonth))
   return snap.exists() ? (snap.data() as GenerationReport) : { uncovered: [] }
+}
+
+export type PtPhaseDoc = Record<string, PtPhase>
+
+/** Reads the part-time phase map for a month. Returns {} if absent. */
+export async function getPtPhase(nucleoId: string, yearMonth: string): Promise<PtPhaseDoc> {
+  const snap = await getDoc(doc(db, 'nuclei', nucleoId, 'ptPhase', yearMonth))
+  return snap.exists() ? (snap.data() as PtPhaseDoc) : {}
+}
+
+/** Writes the part-time phase map for a month (overwrites). */
+export async function setPtPhase(nucleoId: string, yearMonth: string, phases: PtPhaseDoc): Promise<void> {
+  await setDoc(doc(db, 'nuclei', nucleoId, 'ptPhase', yearMonth), phases)
+}
+
+/**
+ * Resolves each part-time operator's first-week phase for a month, and persists it:
+ * 1. if the month already has a stored phase for all PT → reuse (stable re-generation);
+ * 2. else continue the alternation from the previous month if it has data;
+ * 3. else random (A to one, B to the other), persisted so re-generation stays stable.
+ */
+export async function resolvePtPhases(
+  nucleoId: string,
+  year: number,
+  month: number,
+  ptOpIds: string[]
+): Promise<PtPhaseDoc> {
+  const ym = `${year}-${String(month).padStart(2, '0')}`
+  const current = await getPtPhase(nucleoId, ym)
+  if (ptOpIds.length > 0 && ptOpIds.every(id => current[id])) return current
+
+  const prevYear = month === 1 ? year - 1 : year
+  const prevMonth = month === 1 ? 12 : month - 1
+  const prev = await getPtPhase(nucleoId, `${prevYear}-${String(prevMonth).padStart(2, '0')}`)
+
+  const result: PtPhaseDoc = {}
+  if (ptOpIds.some(id => prev[id])) {
+    const prevWeekCount = weeksOfMonth(prevYear, prevMonth).length
+    for (const id of ptOpIds) {
+      result[id] = continueStartPhase(prev[id] ?? 'A', prevWeekCount)
+    }
+  } else {
+    const flip = Math.random() < 0.5
+    ptOpIds.forEach((id, i) => {
+      result[id] = ((i % 2 === 0) === flip) ? 'A' : 'B'
+    })
+  }
+
+  await setPtPhase(nucleoId, ym, result)
+  return result
 }
