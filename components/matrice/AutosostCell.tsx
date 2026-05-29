@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { AutosostOperator, AutosostAssignment } from '@/lib/firebase/firestore'
 
 interface Props {
@@ -14,13 +14,23 @@ interface Props {
 
 export function AutosostCell({ day, uncoveredShifts, assignments, pool, editable, onAssign, onUnassign }: Props) {
   const [openIdx, setOpenIdx] = useState<number | null>(null)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (openIdx === null) return
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpenIdx(null)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [openIdx])
 
   if (uncoveredShifts.length === 0 && assignments.length === 0) {
     return <div className="h-8" />
   }
 
   return (
-    <div className="flex flex-col gap-1 justify-center">
+    <div ref={ref} className="flex flex-col gap-1 justify-center">
       {assignments.map((a, i) => (
         <button
           key={`a${i}`}
