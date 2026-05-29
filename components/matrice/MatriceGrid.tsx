@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { MatriceRow } from './MatriceRow'
 import { DayHeader } from './DayHeader'
 import { useMatrice } from '@/hooks/useMatrice'
@@ -22,6 +22,13 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }:
   const today = new Date()
   const daysInMonth = new Date(year, month, 0).getDate()
   const canEdit = currentUser.role === 'raa' || currentUser.role === 'coordinatrice'
+
+  // Crosshair hover: highlight the row + column under the mouse
+  const [hovered, setHovered] = useState<{ operatorId: string; day: number } | null>(null)
+  const handleCellHover = useCallback((operatorId: string, day: number) => {
+    setHovered({ operatorId, day })
+  }, [])
+  const handleCellLeave = useCallback(() => setHovered(null), [])
 
   useEffect(() => {
     if (!matriceLoading && !nucleoLoading && onDataReady) {
@@ -52,7 +59,7 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }:
   }
 
   return (
-    <div className="flex-1 overflow-auto p-3">
+    <div className="flex-1 overflow-auto p-3" onMouseLeave={handleCellLeave}>
       <div
         className="grid gap-1"
         style={{ gridTemplateColumns: `160px repeat(${daysInMonth}, minmax(36px, 1fr))` }}
@@ -62,7 +69,7 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }:
           const day = i + 1
           const date = new Date(year, month - 1, day)
           const isToday = date.toDateString() === today.toDateString()
-          return <DayHeader key={day} day={day} date={date} isToday={isToday} />
+          return <DayHeader key={day} day={day} date={date} isToday={isToday} isColHovered={hovered?.day === day} />
         })}
         {operators.map(op => (
           <MatriceRow
@@ -75,6 +82,9 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }:
             allShiftTypes={allShiftTypes}
             editable={canEdit}
             onCellSelect={handleCellSelect}
+            hoveredOperatorId={hovered?.operatorId ?? null}
+            hoveredDay={hovered?.day ?? null}
+            onCellHover={handleCellHover}
           />
         ))}
       </div>

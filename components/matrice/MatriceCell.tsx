@@ -11,9 +11,11 @@ interface MatriceCellProps {
   onSelect: (entry: MatriceDayEntry) => void
   violations?: Record<string, LegalViolation[]>
   allShiftTypes?: ShiftType[]
+  highlighted?: boolean
+  onHover?: () => void
 }
 
-export function MatriceCell({ entry, shiftType, editable, onSelect, violations = {}, allShiftTypes = [] }: MatriceCellProps) {
+export function MatriceCell({ entry, shiftType, editable, onSelect, violations = {}, allShiftTypes = [], highlighted = false, onHover }: MatriceCellProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -32,10 +34,12 @@ export function MatriceCell({ entry, shiftType, editable, onSelect, violations =
       ref={ref}
       style={{ backgroundColor: shiftType.color }}
       onClick={() => editable && setOpen(o => !o)}
+      onMouseEnter={onHover}
       className={`relative h-8 rounded flex items-center justify-center text-xs font-bold select-none
         border border-black/5 transition-all
         ${editable ? 'cursor-pointer hover:brightness-95 hover:shadow-sm' : 'cursor-default'}
-        ${open ? 'ring-2 ring-blue-500 ring-offset-1 z-50' : ''}`}
+        ${open ? 'ring-2 ring-blue-500 ring-offset-1 z-50'
+          : highlighted ? 'ring-1 ring-inset ring-blue-400/70 brightness-95' : ''}`}
       title={entry?.note}
     >
       {entry?.code ?? '—'}
