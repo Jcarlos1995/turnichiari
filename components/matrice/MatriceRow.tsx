@@ -13,7 +13,8 @@ interface MatriceRowProps {
   month: number
   allShiftTypes: ShiftType[]
   editable: boolean
-  onCellSelect: (operatorId: string, day: number, entry: { code: string; note?: string; updatedAt: number }) => void
+  onCellSelect: (operatorId: string, day: number, entry: { code: string; note?: string; updatedAt: number }, previousCode?: string) => void
+  onCellNight: (operatorId: string, day: number, isOverride: boolean) => void
   hoveredOperatorId: string | null
   hoveredDay: number | null
   onCellHover: (operatorId: string, day: number) => void
@@ -32,7 +33,7 @@ interface CellData {
 }
 
 function MatriceRowImpl({
-  operator, matrice, daysInMonth, allShiftTypes, editable, onCellSelect,
+  operator, matrice, daysInMonth, allShiftTypes, editable, onCellSelect, onCellNight,
   hoveredOperatorId, hoveredDay, onCellHover,
 }: MatriceRowProps) {
   const operatorData = matrice[operator.id] ?? {}
@@ -80,7 +81,8 @@ function MatriceRowImpl({
           entry={entry}
           shiftType={shiftType}
           editable={editable}
-          onSelect={(e) => onCellSelect(operator.id, day, { ...e, updatedAt: Date.now() })}
+          onSelect={(e) => onCellSelect(operator.id, day, { ...e, updatedAt: Date.now() }, entry?.code)}
+          onSelectNight={(isOverride) => onCellNight(operator.id, day, isOverride)}
           violations={violations}
           allShiftTypes={allShiftTypes}
           highlighted={rowHovered || hoveredDay === day}

@@ -4,7 +4,8 @@ import { MatriceRow } from './MatriceRow'
 import { DayHeader } from './DayHeader'
 import { useMatrice } from '@/hooks/useMatrice'
 import { useNucleo } from '@/hooks/useNucleo'
-import { updateMatriceCell } from '@/lib/firebase/firestore'
+import { updateMatriceCell, setNightShift, clearNightSmonto } from '@/lib/firebase/firestore'
+import { NIGHT } from '@/lib/shifts/nightShift'
 import type { AppUser, Operator, MatriceMonth } from '@/lib/types'
 
 interface MatriceGridProps {
@@ -39,9 +40,14 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }:
   const handleCellSelect = useCallback(async (
     operatorId: string,
     day: number,
-    entry: { code: string; note?: string; updatedAt: number }
+    entry: { code: string; note?: string; updatedAt: number },
+    previousCode?: string
   ) => {
     try {
+      // If the edited cell was an N1, its paired N2 (next day) must be cleared.
+      if (previousCode === NIGHT.start) {
+        await clearNightSmonto(nucleoId, year, month, day, operatorId)
+      }
       await updateMatriceCell(nucleoId, yearMonth, operatorId, day, {
         ...entry,
         updatedBy: currentUser.uid,
@@ -52,7 +58,19 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }:
       // cella su '—' senza alcun segnale per l'utente o lo sviluppatore.
       console.error('Errore salvataggio cella matrice:', err)
     }
-  }, [nucleoId, yearMonth, currentUser.uid])
+  }, [nucleoId, yearMonth, year, month, currentUser.uid])
+
+  const handleCellNight = useCallback(async (
+    operatorId: string,
+    day: number,
+    isOverride: boolean
+  ) => {
+    try {
+      await setNightShift(nucleoId, year, month, day, operatorId, currentUser.uid, isOverride)
+    } catch (err) {
+      console.error('Errore salvataggio turno notte:', err)
+    }
+  }, [nucleoId, year, month, currentUser.uid])
 
   if (matriceLoading || nucleoLoading) {
     return <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">Caricamento matrice...</div>
@@ -82,6 +100,7 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }:
             allShiftTypes={allShiftTypes}
             editable={canEdit}
             onCellSelect={handleCellSelect}
+            onCellNight={handleCellNight}
             hoveredOperatorId={hovered?.operatorId ?? null}
             hoveredDay={hovered?.day ?? null}
             onCellHover={handleCellHover}
