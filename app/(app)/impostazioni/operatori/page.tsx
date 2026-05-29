@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
-import { subscribeOperators } from '@/lib/firebase/firestore'
+import { subscribeOperators, subscribeAutosost, addAutosost, removeAutosost, type AutosostOperator } from '@/lib/firebase/firestore'
 import { NuovoOperatoreModal } from '@/components/impostazioni/NuovoOperatoreModal'
 import { EditaOperatoreModal } from '@/components/impostazioni/EditaOperatoreModal'
 import type { Operator } from '@/lib/types'
@@ -13,6 +13,8 @@ export default function OperatoriPage() {
   const [loading, setLoading] = useState(true)
   const [showNuovoModal, setShowNuovoModal] = useState(false)
   const [editingOperator, setEditingOperator] = useState<Operator | null>(null)
+  const [autosost, setAutosost] = useState<AutosostOperator[]>([])
+  const [newAutosostName, setNewAutosostName] = useState('')
 
   const nucleoId = user?.nucleoId
 
@@ -25,6 +27,18 @@ export default function OperatoriPage() {
     }, true)
     return unsub
   }, [nucleoId, user])
+
+  useEffect(() => {
+    if (!user || user.role === 'oss') return
+    return subscribeAutosost(setAutosost)
+  }, [user])
+
+  async function handleAddAutosost() {
+    const name = newAutosostName.trim()
+    if (!name) return
+    setNewAutosostName('')
+    await addAutosost(name)
+  }
 
   if (!user || user.role === 'oss') {
     return <div className="p-6 text-sm text-slate-500">Accesso non autorizzato.</div>
@@ -111,6 +125,48 @@ export default function OperatoriPage() {
             )
           })
         )}
+      </div>
+
+      {/* Autosostituzione pool (condiviso tra le 3 RAA) */}
+      <div className="mt-8">
+        <h2 className="text-base font-bold text-slate-900">Autosostituzione</h2>
+        <p className="text-sm text-slate-500 mb-3">
+          Operatori jolly condivisi tra i nuclei, usati per coprire i turni scoperti.
+        </p>
+        <div className="flex gap-2 mb-3">
+          <input
+            value={newAutosostName}
+            onChange={e => setNewAutosostName(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleAddAutosost() }}
+            placeholder="Nome operatore autosostituzione"
+            className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <button
+            onClick={handleAddAutosost}
+            className="px-3 py-2 text-sm font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
+          >
+            Aggiungi
+          </button>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100">
+          {autosost.length === 0 ? (
+            <p className="py-6 text-center text-sm text-slate-400">Nessun operatore di autosostituzione.</p>
+          ) : (
+            autosost.map(a => (
+              <div key={a.id} className="flex items-center gap-3 px-4 py-3">
+                <span className="flex-1 text-sm font-medium text-slate-800">{a.name}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-pink-100 text-pink-700">AUTO</span>
+                <button
+                  onClick={() => removeAutosost(a.id)}
+                  title="Rimuovi"
+                  className="p-1 text-slate-400 hover:text-red-600 rounded transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Nuovo operatore modal */}
