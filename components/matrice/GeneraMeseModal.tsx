@@ -1,7 +1,8 @@
 'use client'
 import { useState } from 'react'
-import { generateFulltimeMonth, generateParttimeMonth, getDaysInMonth, nextMonthPhase } from '@/lib/cycle/cycleEngine'
-import { bulkUpdateMatrice, updateOperatorCycle } from '@/lib/firebase/firestore'
+import { generateFulltimeMonth, getDaysInMonth, nextMonthPhase } from '@/lib/cycle/cycleEngine'
+import { ptMonthSchedule } from '@/lib/genera/ptSchedule'
+import { bulkUpdateMatrice, updateOperatorCycle, resolvePtPhases } from '@/lib/firebase/firestore'
 import type { Operator, MatriceMonth, AppUser } from '@/lib/types'
 
 interface GeneraMeseModalProps {
@@ -28,13 +29,10 @@ export function GeneraMeseModal({
     (op.contractType === 'fulltime' || op.contractType === 'standard') &&
     op.cycle && op.cyclePhase !== undefined
   )
-  const parttimeOps = operators.filter(op =>
-    op.contractType === 'parttime' && op.weeklyPattern
-  )
+  const parttimeOps = operators.filter(op => op.contractType === 'parttime')
   const unconfigured = operators.filter(op =>
-    ((op.contractType === 'fulltime' || op.contractType === 'standard') &&
-     (!op.cycle || op.cyclePhase === undefined)) ||
-    (op.contractType === 'parttime' && !op.weeklyPattern)
+    (op.contractType === 'fulltime' || op.contractType === 'standard') &&
+    (!op.cycle || op.cyclePhase === undefined)
   )
 
   const totalConfigured = fulltimeOps.length + parttimeOps.length
@@ -49,8 +47,10 @@ export function GeneraMeseModal({
       for (const op of fulltimeOps) {
         generated[op.id] = generateFulltimeMonth(op, year, month)
       }
+      // Part-time: orario contrattuale bisettimanale (fase risolta + persistita)
+      const ptPhases = await resolvePtPhases(nucleoId, year, month, parttimeOps.map(o => o.id))
       for (const op of parttimeOps) {
-        generated[op.id] = generateParttimeMonth(op, year, month)
+        generated[op.id] = ptMonthSchedule(year, month, ptPhases[op.id] ?? 'A')
       }
 
       // Write to Firestore (skips existing cells)

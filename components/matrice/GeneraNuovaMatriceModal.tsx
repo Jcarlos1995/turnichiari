@@ -1,7 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { generateNuovaMatrice, type ExceptionRange, type GenerationReport } from '@/lib/genera/nuovaMatrice'
-import { overwriteMatriceMonth, saveGenerationReport } from '@/lib/firebase/firestore'
+import { ptMonthSchedule } from '@/lib/genera/ptSchedule'
+import { overwriteMatriceMonth, saveGenerationReport, resolvePtPhases } from '@/lib/firebase/firestore'
 import type { Operator, ShiftType, AppUser } from '@/lib/types'
 
 interface Props {
@@ -52,9 +53,23 @@ export function GeneraNuovaMatriceModal({
         operatorId: e.operatorId, code: e.code,
         fromDay: Math.min(e.fromDay, e.toDay), toDay: Math.max(e.fromDay, e.toDay),
       }))
+
+      // Orario fisso dei part-time: risolvi le fasi (continuità/random, persistito) e
+      // costruisci ptFixed (pattern + eventuali eccezioni del PT sovrapposte).
+      const ptOps = operators.filter(o => o.contractType === 'parttime')
+      const phases = await resolvePtPhases(nucleoId, year, month, ptOps.map(o => o.id))
+      const ptFixed: Record<string, Record<number, string>> = {}
+      for (const op of ptOps) {
+        const sched = ptMonthSchedule(year, month, phases[op.id] ?? 'A')
+        for (const r of ranges.filter(x => x.operatorId === op.id)) {
+          for (let d = r.fromDay; d <= r.toDay; d++) sched[d] = r.code
+        }
+        ptFixed[op.id] = sched
+      }
+
       const { matrice, report } = generateNuovaMatrice({
         operators: operators.map(o => ({ id: o.id, contractType: o.contractType })),
-        year, month, exceptions: ranges, shiftCatalog,
+        year, month, exceptions: ranges, shiftCatalog, ptFixed,
       })
       const yearMonth = `${year}-${String(month).padStart(2, '0')}`
       await overwriteMatriceMonth(nucleoId, yearMonth, matrice, currentUser.uid)
