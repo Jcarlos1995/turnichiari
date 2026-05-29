@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { CellDropdown } from './CellDropdown'
-import type { ShiftType, MatriceDayEntry } from '@/lib/types'
+import type { ShiftType, MatriceDayEntry, ContractType } from '@/lib/types'
 import type { LegalViolation } from '@/lib/validation/legal'
 import { NIGHT } from '@/lib/shifts/nightShift'
 
@@ -11,13 +11,14 @@ interface MatriceCellProps {
   editable: boolean
   onSelect: (entry: MatriceDayEntry) => void
   onSelectNight?: (isOverride: boolean) => void
+  contractType?: ContractType
   violations?: Record<string, LegalViolation[]>
   allShiftTypes?: ShiftType[]
   highlighted?: boolean
   onHover?: () => void
 }
 
-export function MatriceCell({ entry, shiftType, editable, onSelect, onSelectNight, violations = {}, allShiftTypes = [], highlighted = false, onHover }: MatriceCellProps) {
+export function MatriceCell({ entry, shiftType, editable, onSelect, onSelectNight, contractType, violations = {}, allShiftTypes = [], highlighted = false, onHover }: MatriceCellProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -67,6 +68,7 @@ export function MatriceCell({ entry, shiftType, editable, onSelect, onSelectNigh
           violations={violations}
           onSelect={onSelect}
           onSelectNight={onSelectNight}
+          contractType={contractType}
           onClose={() => setOpen(false)}
         />
       )}

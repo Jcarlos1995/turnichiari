@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import type { ShiftType, MatriceDayEntry } from '@/lib/types'
+import type { ShiftType, MatriceDayEntry, ContractType } from '@/lib/types'
 import type { LegalViolation } from '@/lib/validation/legal'
 import { NIGHT } from '@/lib/shifts/nightShift'
 
@@ -10,14 +10,20 @@ interface CellDropdownProps {
   violations: Record<string, LegalViolation[]>
   onSelect: (entry: MatriceDayEntry) => void
   onSelectNight?: (isOverride: boolean) => void
+  contractType?: ContractType
   onClose: () => void
 }
 
-export function CellDropdown({ currentCode, shiftTypes, violations, onSelect, onSelectNight, onClose }: CellDropdownProps) {
+export function CellDropdown({ currentCode, shiftTypes, violations, onSelect, onSelectNight, contractType, onClose }: CellDropdownProps) {
   const [note, setNote] = useState('')
 
   const workShifts = shiftTypes.filter(s => !s.isSystem && s.code !== NIGHT.start && s.code !== NIGHT.smonto)
-  const systemShifts = shiftTypes.filter(s => s.isSystem)
+  const systemShifts = shiftTypes.filter(s => {
+    if (!s.isSystem) return false
+    if (s.code === 'BO') return contractType === 'fulltime' || contractType === 'standard'
+    if (s.code === 'RC') return contractType === 'parttime'
+    return true
+  })
   const nightShift = shiftTypes.find(s => s.code === NIGHT.start)
   const nightBlocked = (violations[NIGHT.start]?.length ?? 0) > 0
 

@@ -83,6 +83,7 @@ function MatriceRowImpl({
           editable={editable}
           onSelect={(e) => onCellSelect(operator.id, day, { ...e, updatedAt: Date.now() }, entry?.code)}
           onSelectNight={(isOverride) => onCellNight(operator.id, day, isOverride)}
+          contractType={operator.contractType}
           violations={violations}
           allShiftTypes={allShiftTypes}
           highlighted={rowHovered || hoveredDay === day}
