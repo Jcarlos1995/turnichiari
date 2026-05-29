@@ -1,5 +1,5 @@
 import {
-  doc, getDoc, setDoc, getDocs,
+  doc, getDoc, setDoc, getDocs, addDoc, deleteDoc,
   collection, query, where, orderBy,
   onSnapshot, writeBatch, deleteField,
   type Unsubscribe
@@ -373,6 +373,39 @@ export async function getGenerationReport(
 ): Promise<GenerationReport> {
   const snap = await getDoc(doc(db, 'nuclei', nucleoId, 'matriceMeta', yearMonth))
   return snap.exists() ? (snap.data() as GenerationReport) : { uncovered: [] }
+}
+
+// ── Autosostituzione (pool condiviso cross-nucleo) ──────────────────────────
+export interface AutosostOperator { id: string; name: string }
+
+/** Subscribes to the shared autosostituzione operator pool (all nuclei). */
+export function subscribeAutosost(callback: (ops: AutosostOperator[]) => void): Unsubscribe {
+  const q = query(collection(db, 'autosostituzione'), orderBy('name'))
+  return onSnapshot(q, snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as AutosostOperator)))
+}
+
+/** Adds an operator to the shared autosostituzione pool. */
+export async function addAutosost(name: string): Promise<void> {
+  await addDoc(collection(db, 'autosostituzione'), { name })
+}
+
+/** Removes an operator from the shared autosostituzione pool. */
+export async function removeAutosost(id: string): Promise<void> {
+  await deleteDoc(doc(db, 'autosostituzione', id))
+}
+
+// ── Assegnazioni di autosostituzione per nucleo/mese ────────────────────────
+export interface AutosostAssignment { day: number; shift: string; autoOpId: string; autoOpName: string }
+
+/** Reads the autosostituzione assignments for a month. Returns [] if absent. */
+export async function getAutosostAssignments(nucleoId: string, yearMonth: string): Promise<AutosostAssignment[]> {
+  const snap = await getDoc(doc(db, 'nuclei', nucleoId, 'autosostAssign', yearMonth))
+  return snap.exists() ? ((snap.data() as { items?: AutosostAssignment[] }).items ?? []) : []
+}
+
+/** Writes the autosostituzione assignments for a month (overwrites). */
+export async function setAutosostAssignments(nucleoId: string, yearMonth: string, items: AutosostAssignment[]): Promise<void> {
+  await setDoc(doc(db, 'nuclei', nucleoId, 'autosostAssign', yearMonth), { items })
 }
 
 /** Reads the saved exceptions (ferie/104/…) for a month. Returns [] if absent. */

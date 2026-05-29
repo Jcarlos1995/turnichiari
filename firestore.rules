@@ -14,6 +14,10 @@ service cloud.firestore {
     function isCoordinatrice() {
       return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coordinatrice';
     }
+    function isStaff() {
+      let r = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return isAuth() && (r == 'raa' || r == 'coordinatrice');
+    }
 
     // Users: read own profile; coordinatrice reads all
     match /users/{userId} {
@@ -72,11 +76,22 @@ service cloud.firestore {
         allow write: if canWrite(nucleoId);
       }
 
+      match /autosostAssign/{yearMonth} {
+        allow read: if isAuth();
+        allow write: if canWrite(nucleoId);
+      }
+
       match /requests/{requestId} {
         allow read: if isAuth();
         allow create: if isOSS();
         allow update: if canWrite(nucleoId);
       }
+    }
+
+    // Autosostituzione: pool condiviso cross-nucleo (qualsiasi RAA/Coordinatrice)
+    match /autosostituzione/{id} {
+      allow read: if isAuth();
+      allow write: if isStaff();
     }
 
     // Audit log: write only by Functions; read by coordinatrice
