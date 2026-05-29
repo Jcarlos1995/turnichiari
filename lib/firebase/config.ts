@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeFirestore, getFirestore } from 'firebase/firestore'
 
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -11,8 +11,17 @@ export const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 }
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
+const isFirstInit = getApps().length === 0
+const app = isFirstInit ? initializeApp(firebaseConfig) : getApps()[0]
 
 export const auth = getAuth(app)
-export const db = getFirestore(app)
+
+// ignoreUndefinedProperties: Firestore rifiuta i valori `undefined` di default,
+// il che faceva fallire silenziosamente la scrittura di una cella della matrice
+// (note/originalCode opzionali → undefined). Con questa opzione i campi undefined
+// vengono semplicemente omessi. initializeFirestore va chiamato una sola volta
+// per app, quindi facciamo fallback a getFirestore se l'app esisteva già.
+export const db = isFirstInit
+  ? initializeFirestore(app, { ignoreUndefinedProperties: true })
+  : getFirestore(app)
 export default app

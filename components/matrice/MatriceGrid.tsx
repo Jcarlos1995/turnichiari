@@ -34,10 +34,17 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }:
     day: number,
     entry: { code: string; note?: string; updatedAt: number }
   ) => {
-    await updateMatriceCell(nucleoId, yearMonth, operatorId, day, {
-      ...entry,
-      updatedBy: currentUser.uid,
-    })
+    try {
+      await updateMatriceCell(nucleoId, yearMonth, operatorId, day, {
+        ...entry,
+        updatedBy: currentUser.uid,
+      })
+    } catch (err) {
+      // Non lasciare che la scrittura fallisca silenziosamente: senza questo
+      // log, un errore (es. permessi, valore non valido) farebbe restare la
+      // cella su '—' senza alcun segnale per l'utente o lo sviluppatore.
+      console.error('Errore salvataggio cella matrice:', err)
+    }
   }, [nucleoId, yearMonth, currentUser.uid])
 
   if (matriceLoading || nucleoLoading) {
