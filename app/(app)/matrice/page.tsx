@@ -1,9 +1,13 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { MatriceGrid } from '@/components/matrice/MatriceGrid'
 import { GeneraMeseModal } from '@/components/matrice/GeneraMeseModal'
+import { GeneraNuovaMatriceModal } from '@/components/matrice/GeneraNuovaMatriceModal'
 import { useAuth } from '@/hooks/useAuth'
+import { useNucleo } from '@/hooks/useNucleo'
+import { getGenerationReport } from '@/lib/firebase/firestore'
 import type { Operator, MatriceMonth } from '@/lib/types'
+import type { UncoveredSlot } from '@/lib/genera/nuovaMatrice'
 
 const today = new Date()
 const CURRENT_YEAR  = today.getFullYear()
@@ -14,10 +18,22 @@ export default function MatricePage() {
   const [year, setYear]   = useState(CURRENT_YEAR)
   const [month, setMonth] = useState(CURRENT_MONTH)
   const [showGenModal, setShowGenModal] = useState(false)
+  const [showNuovaModal, setShowNuovaModal] = useState(false)
+  const [showGenMenu, setShowGenMenu] = useState(false)
+  const [uncovered, setUncovered] = useState<UncoveredSlot[]>([])
+  const { allShiftTypes } = useNucleo(user?.nucleoId ?? 'nucleo-b')
 
   // Keep latest operators + matrice from the grid
   const operatorsRef = useRef<Operator[]>([])
   const matriceRef   = useRef<MatriceMonth>({})
+
+  const genYearMonth = `${year}-${String(month).padStart(2, '0')}`
+  useEffect(() => {
+    const nid = user?.nucleoId ?? 'nucleo-b'
+    let active = true
+    getGenerationReport(nid, genYearMonth).then(r => { if (active) setUncovered(r.uncovered) })
+    return () => { active = false }
+  }, [user, genYearMonth, showNuovaModal])
 
   if (!user) return null
 
@@ -70,15 +86,44 @@ export default function MatricePage() {
         )}
 
         {canGenerate && (
-          <button
-            onClick={() => setShowGenModal(true)}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
-          >
-            <span>⚡</span>
-            <span>Genera mese</span>
-          </button>
+          <div className="ml-auto relative">
+            <button
+              onClick={() => setShowGenMenu(m => !m)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
+            >
+              <span>⚡</span><span>Genera</span><span className="text-[10px]">▾</span>
+            </button>
+            {showGenMenu && (
+              <div className="absolute right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-50 min-w-[200px]">
+                <button
+                  onClick={() => { setShowGenMenu(false); setShowGenModal(true) }}
+                  className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100"
+                >
+                  Genera mese <span className="text-slate-400">(cicli)</span>
+                </button>
+                <button
+                  onClick={() => { setShowGenMenu(false); setShowNuovaModal(true) }}
+                  className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100"
+                >
+                  Genera nuova matrice <span className="text-slate-400">(da zero)</span>
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
+
+      {uncovered.length > 0 && (
+        <div className="mx-3 mt-2 border-2 border-red-400 bg-red-50 rounded-lg px-3 py-2">
+          <p className="text-xs font-semibold text-red-700">
+            ⚠ {uncovered.length} turni scoperti da coprire (autosostituzione):
+          </p>
+          <p className="text-[11px] text-red-600 mt-0.5">
+            {uncovered.slice(0, 12).map(u => `G${u.day} ${u.shift}`).join(' · ')}
+            {uncovered.length > 12 ? ` … +${uncovered.length - 12}` : ''}
+          </p>
+        </div>
+      )}
 
       <MatriceGrid
         nucleoId={nucleoId}
@@ -101,6 +146,19 @@ export default function MatricePage() {
           currentUser={user}
           onClose={() => setShowGenModal(false)}
           onGenerated={() => setShowGenModal(false)}
+        />
+      )}
+
+      {showNuovaModal && (
+        <GeneraNuovaMatriceModal
+          nucleoId={nucleoId}
+          year={year}
+          month={month}
+          operators={operatorsRef.current}
+          shiftCatalog={allShiftTypes}
+          currentUser={user}
+          onClose={() => setShowNuovaModal(false)}
+          onGenerated={() => { /* il banner si aggiorna via effetto su showNuovaModal */ }}
         />
       )}
     </div>
