@@ -7,6 +7,7 @@ import { useNucleo } from '@/hooks/useNucleo'
 import { updateMatriceCell, setNightShift, clearNightSmonto } from '@/lib/firebase/firestore'
 import type { AutosostOperator, AutosostAssignment } from '@/lib/firebase/firestore'
 import { NIGHT } from '@/lib/shifts/nightShift'
+import { weeksOfMonth } from '@/lib/bancaore/bancaOre'
 import { AutosostCell } from './AutosostCell'
 import type { AppUser, Operator, MatriceMonth } from '@/lib/types'
 import type { UncoveredSlot } from '@/lib/genera/nuovaMatrice'
@@ -33,7 +34,6 @@ export function MatriceGrid({
   const { matrice, operators, loading: matriceLoading } = useMatrice(nucleoId, yearMonth)
   const { allShiftTypes, loading: nucleoLoading } = useNucleo(nucleoId)
   const today = new Date()
-  const daysInMonth = new Date(year, month, 0).getDate()
   const canEdit = currentUser.role === 'raa' || currentUser.role === 'coordinatrice'
 
   // Crosshair hover: highlight the row + column under the mouse
@@ -84,28 +84,31 @@ export function MatriceGrid({
     }
   }, [nucleoId, year, month, currentUser.uid])
 
-  // Giorno della prima notte (N1) di un operatore nel mese; Infinity se non ne ha
-  const firstNightDay = (opId: string): number => {
+  const weeks = weeksOfMonth(year, month)
+
+  // Giorno della prima notte (N1) di un operatore DENTRO un insieme di giorni; Infinity se nessuna
+  const firstNightDayIn = (opId: string, days: number[]): number => {
     const data = matrice[opId] ?? {}
     let min = Infinity
-    for (const [d, e] of Object.entries(data)) {
-      if (e?.code === NIGHT.start) { const n = Number(d); if (n < min) min = n }
+    for (const d of days) {
+      if (data[d]?.code === NIGHT.start && d < min) min = d
     }
     return min
   }
 
-  // Ordine: FT prima (ordinati per giorno della prima notte, poi alfabetico),
-  // poi i part-time in fondo (alfabetico).
-  const sortedOperators = [...operators].sort((a, b) => {
-    const aPT = a.contractType === 'parttime' ? 1 : 0
-    const bPT = b.contractType === 'parttime' ? 1 : 0
-    if (aPT !== bPT) return aPT - bPT
-    if (aPT === 1) return a.name.localeCompare(b.name)
-    const an = firstNightDay(a.id)
-    const bn = firstNightDay(b.id)
-    if (an !== bn) return an - bn
-    return a.name.localeCompare(b.name)
-  })
+  // Ordine per una settimana: FT prima (per giorno della prima notte di quella settimana,
+  // poi alfabetico), part-time in fondo (alfabetico).
+  const sortForWeek = (days: number[]): Operator[] =>
+    [...operators].sort((a, b) => {
+      const aPT = a.contractType === 'parttime' ? 1 : 0
+      const bPT = b.contractType === 'parttime' ? 1 : 0
+      if (aPT !== bPT) return aPT - bPT
+      if (aPT === 1) return a.name.localeCompare(b.name)
+      const an = firstNightDayIn(a.id, days)
+      const bn = firstNightDayIn(b.id, days)
+      if (an !== bn) return an - bn
+      return a.name.localeCompare(b.name)
+    })
 
   // Per-day: remaining uncovered shifts (after subtracting autosost assignments) + assignments
   const assignmentsByDay: Record<number, AutosostAssignment[]> = {}
@@ -126,74 +129,81 @@ export function MatriceGrid({
 
   return (
     <div className="flex-1 overflow-auto p-3" onMouseLeave={handleCellLeave}>
-      <div
-        className="grid gap-1"
-        style={{ gridTemplateColumns: `160px repeat(${daysInMonth}, minmax(36px, 1fr))` }}
-      >
-        <div className="h-9 flex items-center px-2 text-xs font-semibold text-slate-500">Operatore</div>
-        {Array.from({ length: daysInMonth }, (_, i) => {
-          const day = i + 1
-          const date = new Date(year, month - 1, day)
-          const isToday = date.toDateString() === today.toDateString()
-          return <DayHeader key={day} day={day} date={date} isToday={isToday} isColHovered={hovered?.day === day} />
-        })}
-        {sortedOperators.map((op, idx) => {
-          const isPT = op.contractType === 'parttime'
-          const prevPT = idx > 0 && sortedOperators[idx - 1].contractType === 'parttime'
-          const showPTSeparator = isPT && !prevPT
-          return (
-            <Fragment key={op.id}>
-              {showPTSeparator && (
-                <div
-                  style={{ gridColumn: '1 / -1' }}
-                  className="mt-3 pb-0.5 px-2 flex items-end text-[10px] font-semibold text-purple-500 uppercase tracking-wide border-t border-slate-200 pt-2"
-                >
-                  Part-time
-                </div>
-              )}
-              <MatriceRow
-                operator={op}
-                matrice={matrice}
-                daysInMonth={daysInMonth}
-                year={year}
-                month={month}
-                allShiftTypes={allShiftTypes}
-                editable={canEdit}
-                onCellSelect={handleCellSelect}
-                onCellNight={handleCellNight}
-                hoveredOperatorId={hovered?.operatorId ?? null}
-                hoveredDay={hovered?.day ?? null}
-                onCellHover={handleCellHover}
-              />
-            </Fragment>
-          )
-        })}
-
-        {/* Riga "Autosostituzione": celle interattive sui giorni con turni scoperti */}
-        {showAutosostRow && (
-          <>
-            <div style={{ gridColumn: '1 / -1' }} className="mt-3 border-t border-slate-200" />
-            <div className="h-9 flex items-center px-2 text-[10px] font-semibold uppercase tracking-wide text-red-600 sticky left-0 z-10 bg-slate-50">
-              Autosostituzione
+      {weeks.map((weekDays, wi) => {
+        const weekSorted = sortForWeek(weekDays)
+        const weekHasAutosost = showAutosostRow && weekDays.some(
+          d => (remainingByDay[d]?.length ?? 0) > 0 || (assignmentsByDay[d]?.length ?? 0) > 0
+        )
+        return (
+          <div
+            key={wi}
+            className="grid gap-1 mb-6"
+            style={{ gridTemplateColumns: `160px repeat(${weekDays.length}, minmax(36px, 1fr))` }}
+          >
+            <div className="h-9 flex items-center px-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              Sett. {wi + 1}
             </div>
-            {Array.from({ length: daysInMonth }, (_, i) => {
-              const day = i + 1
+            {weekDays.map(day => {
+              const date = new Date(year, month - 1, day)
+              const isToday = date.toDateString() === today.toDateString()
+              return <DayHeader key={day} day={day} date={date} isToday={isToday} isColHovered={hovered?.day === day} />
+            })}
+
+            {weekSorted.map((op, idx) => {
+              const isPT = op.contractType === 'parttime'
+              const prevPT = idx > 0 && weekSorted[idx - 1].contractType === 'parttime'
+              const showPTSeparator = isPT && !prevPT
               return (
-                <AutosostCell
-                  key={day}
-                  day={day}
-                  uncoveredShifts={remainingByDay[day] ?? []}
-                  assignments={assignmentsByDay[day] ?? []}
-                  pool={autosostPool}
-                  editable={canEdit}
-                  onAssign={(d, s, op) => onAutosostAssign?.(d, s, op)}
-                  onUnassign={(d, s, id) => onAutosostUnassign?.(d, s, id)}
-                />
+                <Fragment key={op.id}>
+                  {showPTSeparator && (
+                    <div
+                      style={{ gridColumn: '1 / -1' }}
+                      className="mt-2 pb-0.5 px-2 flex items-end text-[10px] font-semibold text-purple-500 uppercase tracking-wide border-t border-slate-200 pt-1.5"
+                    >
+                      Part-time
+                    </div>
+                  )}
+                  <MatriceRow
+                    operator={op}
+                    matrice={matrice}
+                    days={weekDays}
+                    year={year}
+                    month={month}
+                    allShiftTypes={allShiftTypes}
+                    editable={canEdit}
+                    onCellSelect={handleCellSelect}
+                    onCellNight={handleCellNight}
+                    hoveredOperatorId={hovered?.operatorId ?? null}
+                    hoveredDay={hovered?.day ?? null}
+                    onCellHover={handleCellHover}
+                  />
+                </Fragment>
               )
             })}
-          </>
-        )}
-      </div>
+
+            {weekHasAutosost && (
+              <>
+                <div style={{ gridColumn: '1 / -1' }} className="mt-2 border-t border-slate-200" />
+                <div className="h-9 flex items-center px-2 text-[10px] font-semibold uppercase tracking-wide text-red-600 sticky left-0 z-10 bg-slate-50">
+                  Autosostituzione
+                </div>
+                {weekDays.map(day => (
+                  <AutosostCell
+                    key={day}
+                    day={day}
+                    uncoveredShifts={remainingByDay[day] ?? []}
+                    assignments={assignmentsByDay[day] ?? []}
+                    pool={autosostPool}
+                    editable={canEdit}
+                    onAssign={(d, s, op) => onAutosostAssign?.(d, s, op)}
+                    onUnassign={(d, s, id) => onAutosostUnassign?.(d, s, id)}
+                  />
+                ))}
+              </>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }

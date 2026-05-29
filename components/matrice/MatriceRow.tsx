@@ -8,7 +8,7 @@ import type { LegalViolation } from '@/lib/validation/legal'
 interface MatriceRowProps {
   operator: Operator
   matrice: MatriceMonth
-  daysInMonth: number
+  days: number[]          // giorni da mostrare in questa riga (es. una settimana)
   year: number
   month: number
   allShiftTypes: ShiftType[]
@@ -33,7 +33,7 @@ interface CellData {
 }
 
 function MatriceRowImpl({
-  operator, matrice, daysInMonth, allShiftTypes, editable, onCellSelect, onCellNight,
+  operator, matrice, days, allShiftTypes, editable, onCellSelect, onCellNight,
   hoveredOperatorId, hoveredDay, onCellHover,
 }: MatriceRowProps) {
   const operatorData = matrice[operator.id] ?? {}
@@ -43,8 +43,7 @@ function MatriceRowImpl({
   // Memoized so hover-driven re-renders only re-apply highlight classes
   // instead of recomputing violations for every cell.
   const cells = useMemo<CellData[]>(() => {
-    return Array.from({ length: daysInMonth }, (_, i) => {
-      const day = i + 1
+    return days.map((day) => {
       const entry = operatorData[day]
       const code = entry?.code ?? 'R'
       const shiftType = allShiftTypes.find(s => s.code === code) ?? FALLBACK_SHIFT
@@ -67,7 +66,7 @@ function MatriceRowImpl({
 
       return { day, entry, shiftType, violations }
     })
-  }, [operatorData, daysInMonth, allShiftTypes])
+  }, [operatorData, days, allShiftTypes])
 
   return (
     <div className="contents">
