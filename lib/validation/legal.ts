@@ -1,4 +1,5 @@
 import type { ShiftType } from '@/lib/types'
+import { NIGHT } from '@/lib/shifts/nightShift'
 
 export interface LegalViolation {
   rule: 'MIN_REST_11H' | 'WEEKLY_REST' | 'MAX_WEEKLY_HOURS'
@@ -47,7 +48,7 @@ export function checkMinRestBetweenShifts(
   if (prevShift.isSystem || nextShift.isSystem) return null
 
   // N1→N2 is one continuous night shift crossing midnight — no rest check needed
-  if (prevShift.code === 'N1' && nextShift.code === 'N2') return null
+  if (prevShift.code === NIGHT.start && nextShift.code === NIGHT.smonto) return null
 
   const restMinutes = restMinutesBetween(prevShift, nextShift)
   const restHours = restMinutes / 60
