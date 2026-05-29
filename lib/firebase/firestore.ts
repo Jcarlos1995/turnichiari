@@ -7,6 +7,7 @@ import {
 import { db } from './config'
 import type { Nucleo, Operator, MatriceMonth, MatriceDayEntry, ContractType } from '@/lib/types'
 import { NIGHT, nextSmontoTarget } from '@/lib/shifts/nightShift'
+import type { GenerationReport } from '@/lib/genera/nuovaMatrice'
 
 export async function getNucleo(nucleoId: string): Promise<Nucleo | null> {
   const snap = await getDoc(doc(db, 'nuclei', nucleoId))
@@ -331,4 +332,43 @@ export async function setBancaOreEntry(
     { [operatorId]: data },
     { merge: true }
   )
+}
+
+/**
+ * Overwrites the ENTIRE matrice month with a freshly generated schedule.
+ * Clears any previous content (setDoc without merge). generated = { opId: { day: code } }.
+ */
+export async function overwriteMatriceMonth(
+  nucleoId: string,
+  yearMonth: string,
+  generated: Record<string, Record<number, string>>,
+  updatedBy: string
+): Promise<void> {
+  const updatedAt = Date.now()
+  const payload: Record<string, Record<number, MatriceDayEntry>> = {}
+  for (const [opId, days] of Object.entries(generated)) {
+    payload[opId] = {}
+    for (const [day, code] of Object.entries(days)) {
+      payload[opId][Number(day)] = { code, updatedAt, updatedBy, isManualOverride: false }
+    }
+  }
+  await setDoc(doc(db, 'nuclei', nucleoId, 'matrice', yearMonth), payload) // no merge → overwrite
+}
+
+/** Saves the generation report (uncovered slots) for a month. */
+export async function saveGenerationReport(
+  nucleoId: string,
+  yearMonth: string,
+  report: GenerationReport
+): Promise<void> {
+  await setDoc(doc(db, 'nuclei', nucleoId, 'matriceMeta', yearMonth), report)
+}
+
+/** Reads the generation report for a month. Returns { uncovered: [] } if absent. */
+export async function getGenerationReport(
+  nucleoId: string,
+  yearMonth: string
+): Promise<GenerationReport> {
+  const snap = await getDoc(doc(db, 'nuclei', nucleoId, 'matriceMeta', yearMonth))
+  return snap.exists() ? (snap.data() as GenerationReport) : { uncovered: [] }
 }

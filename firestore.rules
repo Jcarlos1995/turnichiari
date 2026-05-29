@@ -57,6 +57,11 @@ service cloud.firestore {
         allow write: if canWrite(nucleoId);
       }
 
+      match /matriceMeta/{yearMonth} {
+        allow read: if isAuth();
+        allow write: if canWrite(nucleoId);
+      }
+
       match /requests/{requestId} {
         allow read: if isAuth();
         allow create: if isOSS();
