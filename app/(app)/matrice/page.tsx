@@ -6,7 +6,7 @@ import { GeneraNuovaMatriceModal } from '@/components/matrice/GeneraNuovaMatrice
 import { EccezioniModal } from '@/components/matrice/EccezioniModal'
 import { useAuth } from '@/hooks/useAuth'
 import { useNucleo } from '@/hooks/useNucleo'
-import { getGenerationReport } from '@/lib/firebase/firestore'
+import { getGenerationReport, subscribeAutosost, getAutosostAssignments, setAutosostAssignments as saveAutosostAssignments, type AutosostOperator, type AutosostAssignment } from '@/lib/firebase/firestore'
 import type { Operator, MatriceMonth } from '@/lib/types'
 import type { UncoveredSlot } from '@/lib/genera/nuovaMatrice'
 
@@ -23,6 +23,8 @@ export default function MatricePage() {
   const [showEccezioniModal, setShowEccezioniModal] = useState(false)
   const [showGenMenu, setShowGenMenu] = useState(false)
   const [uncovered, setUncovered] = useState<UncoveredSlot[]>([])
+  const [autosostPool, setAutosostPool] = useState<AutosostOperator[]>([])
+  const [autosostAssignments, setAutosostAssignments] = useState<AutosostAssignment[]>([])
   const { allShiftTypes } = useNucleo(user?.nucleoId ?? 'nucleo-b')
 
   // Keep latest operators + matrice from the grid
@@ -34,13 +36,32 @@ export default function MatricePage() {
     const nid = user?.nucleoId ?? 'nucleo-b'
     let active = true
     getGenerationReport(nid, genYearMonth).then(r => { if (active) setUncovered(r.uncovered) })
+    getAutosostAssignments(nid, genYearMonth).then(a => { if (active) setAutosostAssignments(a) })
     return () => { active = false }
   }, [user, genYearMonth, showNuovaModal])
+
+  useEffect(() => subscribeAutosost(setAutosostPool), [])
 
   if (!user) return null
 
   const nucleoId = user.nucleoId ?? 'nucleo-b'
   const canGenerate = user.role === 'raa' || user.role === 'coordinatrice'
+
+  async function handleAutosostAssign(day: number, shift: string, op: AutosostOperator) {
+    const next = [...autosostAssignments, { day, shift, autoOpId: op.id, autoOpName: op.name }]
+    setAutosostAssignments(next)
+    await saveAutosostAssignments(nucleoId, genYearMonth, next)
+  }
+
+  async function handleAutosostUnassign(day: number, shift: string, autoOpId: string) {
+    let removed = false
+    const next = autosostAssignments.filter(a => {
+      if (!removed && a.day === day && a.shift === shift && a.autoOpId === autoOpId) { removed = true; return false }
+      return true
+    })
+    setAutosostAssignments(next)
+    await saveAutosostAssignments(nucleoId, genYearMonth, next)
+  }
 
   function prevMonth() {
     if (month === 1) { setMonth(12); setYear(y => y - 1) }
@@ -141,6 +162,10 @@ export default function MatricePage() {
         month={month}
         currentUser={user}
         uncovered={uncovered}
+        autosostPool={autosostPool}
+        autosostAssignments={autosostAssignments}
+        onAutosostAssign={handleAutosostAssign}
+        onAutosostUnassign={handleAutosostUnassign}
         onDataReady={(ops, mat) => {
           operatorsRef.current = ops
           matriceRef.current = mat

@@ -5,7 +5,9 @@ import { DayHeader } from './DayHeader'
 import { useMatrice } from '@/hooks/useMatrice'
 import { useNucleo } from '@/hooks/useNucleo'
 import { updateMatriceCell, setNightShift, clearNightSmonto } from '@/lib/firebase/firestore'
+import type { AutosostOperator, AutosostAssignment } from '@/lib/firebase/firestore'
 import { NIGHT } from '@/lib/shifts/nightShift'
+import { AutosostCell } from './AutosostCell'
 import type { AppUser, Operator, MatriceMonth } from '@/lib/types'
 import type { UncoveredSlot } from '@/lib/genera/nuovaMatrice'
 
@@ -15,10 +17,18 @@ interface MatriceGridProps {
   month: number
   currentUser: AppUser
   uncovered?: UncoveredSlot[]
+  autosostPool?: AutosostOperator[]
+  autosostAssignments?: AutosostAssignment[]
+  onAutosostAssign?: (day: number, shift: string, op: AutosostOperator) => void
+  onAutosostUnassign?: (day: number, shift: string, autoOpId: string) => void
   onDataReady?: (operators: Operator[], matrice: MatriceMonth) => void
 }
 
-export function MatriceGrid({ nucleoId, year, month, currentUser, uncovered = [], onDataReady }: MatriceGridProps) {
+export function MatriceGrid({
+  nucleoId, year, month, currentUser, uncovered = [],
+  autosostPool = [], autosostAssignments = [], onAutosostAssign, onAutosostUnassign,
+  onDataReady,
+}: MatriceGridProps) {
   const yearMonth = `${year}-${String(month).padStart(2, '0')}`
   const { matrice, operators, loading: matriceLoading } = useMatrice(nucleoId, yearMonth)
   const { allShiftTypes, loading: nucleoLoading } = useNucleo(nucleoId)
@@ -81,11 +91,18 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, uncovered = []
     return aPT - bPT
   })
 
-  // Uncovered slots grouped by day, for the "Autosostituzione" row at the bottom
-  const uncoveredByDay: Record<number, string[]> = {}
+  // Per-day: remaining uncovered shifts (after subtracting autosost assignments) + assignments
+  const assignmentsByDay: Record<number, AutosostAssignment[]> = {}
+  for (const a of autosostAssignments) (assignmentsByDay[a.day] ??= []).push(a)
+
+  const remainingByDay: Record<number, string[]> = {}
   for (const u of uncovered) {
-    (uncoveredByDay[u.day] ??= []).push(u.shift === 'Notte' ? 'N' : u.shift)
+    const assignedSame = (assignmentsByDay[u.day] ?? []).filter(a => a.shift === u.shift).length
+    const remaining = u.missing - assignedSame
+    for (let k = 0; k < remaining; k++) (remainingByDay[u.day] ??= []).push(u.shift)
   }
+
+  const showAutosostRow = uncovered.length > 0 || autosostAssignments.length > 0
 
   if (matriceLoading || nucleoLoading) {
     return <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">Caricamento matrice...</div>
@@ -136,8 +153,8 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, uncovered = []
           )
         })}
 
-        {/* Riga "Autosostituzione": un riquadro rosso nei giorni con turni scoperti */}
-        {uncovered.length > 0 && (
+        {/* Riga "Autosostituzione": celle interattive sui giorni con turni scoperti */}
+        {showAutosostRow && (
           <>
             <div style={{ gridColumn: '1 / -1' }} className="mt-3 border-t border-slate-200" />
             <div className="h-9 flex items-center px-2 text-xs font-semibold text-red-600 sticky left-0 z-10 bg-slate-50">
@@ -145,18 +162,17 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, uncovered = []
             </div>
             {Array.from({ length: daysInMonth }, (_, i) => {
               const day = i + 1
-              const codes = uncoveredByDay[day]
               return (
-                <div key={day} className="h-9 flex items-center justify-center">
-                  {codes && (
-                    <span
-                      className="border-2 border-red-500 rounded text-[9px] font-bold text-red-600 px-1 py-0.5 leading-none"
-                      title={`Turni scoperti il giorno ${day}: ${codes.join(', ')}`}
-                    >
-                      {codes.join('/')}
-                    </span>
-                  )}
-                </div>
+                <AutosostCell
+                  key={day}
+                  day={day}
+                  uncoveredShifts={remainingByDay[day] ?? []}
+                  assignments={assignmentsByDay[day] ?? []}
+                  pool={autosostPool}
+                  editable={canEdit}
+                  onAssign={(d, s, op) => onAutosostAssign?.(d, s, op)}
+                  onUnassign={(d, s, id) => onAutosostUnassign?.(d, s, id)}
+                />
               )
             })}
           </>
