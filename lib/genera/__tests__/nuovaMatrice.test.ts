@@ -66,6 +66,23 @@ describe('generateNuovaMatrice', () => {
     expect(matrice.ft0[7]).toBe('F')
   })
 
+  it('never assigns more than 3 consecutive identical day shifts to an operator', () => {
+    const { matrice } = generateNuovaMatrice({
+      operators: ops(12, 2), year: 2026, month: 6, exceptions: [], shiftCatalog: CATALOG,
+    })
+    const DAY_CODES = ['M1', 'M2', 'MP', 'P1', 'P2']
+    for (const days of Object.values(matrice)) {
+      let runCode: string | null = null
+      let runLen = 0
+      for (let d = 1; d <= 30; d++) {
+        const c = days[d]
+        if (c === runCode) runLen++
+        else { runCode = c; runLen = 1 }
+        if (DAY_CODES.includes(c)) expect(runLen).toBeLessThanOrEqual(3)
+      }
+    }
+  })
+
   it('reports uncovered slots when staff is insufficient', () => {
     const { report } = generateNuovaMatrice({
       operators: ops(2, 0), year: 2026, month: 6, exceptions: [], shiftCatalog: CATALOG,

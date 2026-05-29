@@ -12,6 +12,7 @@ export const NIGHT_START = 'N1'
 export const NIGHT_SMONTO = 'N2'
 const MAX_WEEKLY_HOURS = 48
 const MAX_CONSECUTIVE_WORK = 6
+const MAX_SAME_SHIFT_RUN = 3 // no più di 3 giorni di fila con lo STESSO codice esatto
 
 export interface GeneraOperator { id: string; contractType: ContractType }
 export interface ExceptionRange { operatorId: string; code: string; fromDay: number; toDay: number }
@@ -46,11 +47,15 @@ export function generateNuovaMatrice(params: {
   const weekHours: Record<string, number[]> = {}
   const nightsWeek: Record<string, number[]> = {}
   const consec: Record<string, number> = {}
+  const runCode: Record<string, string | null> = {}
+  const runLen: Record<string, number> = {}
   for (const op of operators) {
     assigned[op.id] = {}
     weekHours[op.id] = weeks.map(() => 0)
     nightsWeek[op.id] = weeks.map(() => 0)
     consec[op.id] = 0
+    runCode[op.id] = null
+    runLen[op.id] = 0
   }
 
   const exDay: Record<string, Record<number, string>> = {}
@@ -78,6 +83,8 @@ export function generateNuovaMatrice(params: {
     const wi = weekOfDay[d]
     if (weekHours[op.id][wi] + (hours[code] ?? 0) > MAX_WEEKLY_HOURS) return false
     if (consec[op.id] >= MAX_CONSECUTIVE_WORK && (hours[code] ?? 0) > 0) return false
+    // max 3 giorni di fila con lo stesso codice esatto
+    if (runCode[op.id] === code && runLen[op.id] >= MAX_SAME_SHIFT_RUN) return false
     return true
   }
 
@@ -145,11 +152,13 @@ export function generateNuovaMatrice(params: {
       if (!assigned[op.id][d]) assigned[op.id][d] = 'R'
     }
 
-    // 5. aggiorna giorni lavorativi consecutivi
+    // 5. aggiorna giorni lavorativi consecutivi + racha dello stesso codice
     for (const op of operators) {
       const code = assigned[op.id][d]
       if ((hours[code] ?? 0) > 0) consec[op.id] += 1
       else consec[op.id] = 0
+      if (runCode[op.id] === code) runLen[op.id] += 1
+      else { runCode[op.id] = code; runLen[op.id] = 1 }
     }
   }
 
