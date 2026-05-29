@@ -2,20 +2,31 @@
 import { useState } from 'react'
 import type { ShiftType, MatriceDayEntry } from '@/lib/types'
 import type { LegalViolation } from '@/lib/validation/legal'
+import { NIGHT } from '@/lib/shifts/nightShift'
 
 interface CellDropdownProps {
   currentCode?: string          // current cell code (before this selection)
   shiftTypes: ShiftType[]
   violations: Record<string, LegalViolation[]>
   onSelect: (entry: MatriceDayEntry) => void
+  onSelectNight?: (isOverride: boolean) => void
   onClose: () => void
 }
 
-export function CellDropdown({ currentCode, shiftTypes, violations, onSelect, onClose }: CellDropdownProps) {
+export function CellDropdown({ currentCode, shiftTypes, violations, onSelect, onSelectNight, onClose }: CellDropdownProps) {
   const [note, setNote] = useState('')
 
-  const workShifts = shiftTypes.filter(s => !s.isSystem)
+  const workShifts = shiftTypes.filter(s => !s.isSystem && s.code !== NIGHT.start && s.code !== NIGHT.smonto)
   const systemShifts = shiftTypes.filter(s => s.isSystem)
+  const nightShift = shiftTypes.find(s => s.code === NIGHT.start)
+  const nightBlocked = (violations[NIGHT.start]?.length ?? 0) > 0
+
+  function handleNight() {
+    if (nightBlocked) return
+    const isOverride = currentCode !== undefined && currentCode !== '—'
+    onSelectNight?.(isOverride)
+    onClose()
+  }
 
   function handleSelect(code: string) {
     if (violations[code]?.length) return
@@ -55,6 +66,20 @@ export function CellDropdown({ currentCode, shiftTypes, violations, onSelect, on
           </button>
         )
       })}
+
+      {nightShift && (
+        <button
+          onClick={handleNight}
+          disabled={nightBlocked}
+          className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-sm
+            ${nightBlocked ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 active:bg-slate-200'}`}
+        >
+          <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: nightShift.color }} />
+          <span className="font-medium">Notte</span>
+          <span className="text-slate-400 text-xs ml-auto">21:00–06:30</span>
+          {nightBlocked && <span className="text-red-400 text-xs">⚠</span>}
+        </button>
+      )}
 
       <div className="border-t border-slate-100 my-1" />
       <p className="text-[10px] font-semibold text-slate-400 px-3 py-1 uppercase tracking-wide">Assenze</p>
