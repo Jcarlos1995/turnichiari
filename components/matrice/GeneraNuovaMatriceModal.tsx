@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { generateNuovaMatrice, type ExceptionRange, type GenerationReport } from '@/lib/genera/nuovaMatrice'
 import { ptMonthSchedule } from '@/lib/genera/ptSchedule'
-import { overwriteMatriceMonth, saveGenerationReport, resolvePtPhases, getExceptions } from '@/lib/firebase/firestore'
+import { overwriteMatriceMonth, saveGenerationReport, resolvePtPhases, getExceptions, getMatriceMonth } from '@/lib/firebase/firestore'
 import type { Operator, ShiftType, AppUser } from '@/lib/types'
 
 interface Props {
@@ -52,9 +52,20 @@ export function GeneraNuovaMatriceModal({
         ptFixed[op.id] = sched
       }
 
+      // Continuità legale: leggi l'ultimo giorno del mese precedente per ogni operatore
+      const prevYear = month === 1 ? year - 1 : year
+      const prevMonth = month === 1 ? 12 : month - 1
+      const prevDays = new Date(prevYear, prevMonth, 0).getDate()
+      const prevMatrice = await getMatriceMonth(nucleoId, `${prevYear}-${String(prevMonth).padStart(2, '0')}`)
+      const prevLastByOp: Record<string, string> = {}
+      for (const op of operators) {
+        const code = prevMatrice[op.id]?.[prevDays]?.code
+        if (code) prevLastByOp[op.id] = code
+      }
+
       const { matrice, report } = generateNuovaMatrice({
         operators: operators.map(o => ({ id: o.id, contractType: o.contractType })),
-        year, month, exceptions: ranges, shiftCatalog, ptFixed,
+        year, month, exceptions: ranges, shiftCatalog, ptFixed, prevLastByOp,
       })
       await overwriteMatriceMonth(nucleoId, yearMonth, matrice, currentUser.uid)
       await saveGenerationReport(nucleoId, yearMonth, report)

@@ -30,8 +30,9 @@ export function generateNuovaMatrice(params: {
   exceptions: ExceptionRange[]
   shiftCatalog: ShiftType[]
   ptFixed?: Record<string, Record<number, string>>
+  prevLastByOp?: Record<string, string>   // codice dell'ultimo giorno del mese precedente, per operatore
 }): GenerationOutput {
-  const { operators, year, month, exceptions, shiftCatalog, ptFixed } = params
+  const { operators, year, month, exceptions, shiftCatalog, ptFixed, prevLastByOp } = params
   const N = getDaysInMonth(year, month)
 
   const typeByCode: Record<string, ShiftType> = {}
@@ -75,7 +76,8 @@ export function generateNuovaMatrice(params: {
   function legalOk(op: GeneraOperator, d: number, code: string): boolean {
     if (assigned[op.id][d]) return false
     if (exDay[op.id]?.[d]) return false
-    const prev = assigned[op.id][d - 1]
+    // Per il giorno 1, "prev" è l'ultimo turno del mese precedente (continuità legale)
+    const prev = d > 1 ? assigned[op.id][d - 1] : prevLastByOp?.[op.id]
     if (prev) {
       const pv = typeByCode[prev]
       const nv = typeByCode[code]
@@ -101,6 +103,22 @@ export function generateNuovaMatrice(params: {
       if (!assigned[opId]) continue
       for (const [dayStr, code] of Object.entries(days)) {
         placeWork(opId, Number(dayStr), code)
+      }
+    }
+  }
+
+  // Continuità della notte tra mesi: se il mese precedente finiva con un N1/N2,
+  // completa il blocco notte→smonto→riposo nei primi giorni di questo mese.
+  if (prevLastByOp) {
+    for (const op of operators) {
+      const last = prevLastByOp[op.id]
+      if (last === NIGHT_START) {
+        // ieri (ultimo giorno mese prec.) ha iniziato la notte → oggi smonto, domani riposo
+        if (!assigned[op.id][1] && !exDay[op.id]?.[1]) placeWork(op.id, 1, NIGHT_SMONTO)
+        if (N >= 2 && !assigned[op.id][2] && !exDay[op.id]?.[2]) assigned[op.id][2] = 'R'
+      } else if (last === NIGHT_SMONTO) {
+        // ieri era lo smonto → oggi riposo obbligatorio
+        if (!assigned[op.id][1] && !exDay[op.id]?.[1]) assigned[op.id][1] = 'R'
       }
     }
   }

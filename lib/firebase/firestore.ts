@@ -27,6 +27,12 @@ export async function getOperators(nucleoId: string): Promise<Operator[]> {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Operator)
 }
 
+/** One-shot read of a matrice month document. Returns {} if absent. */
+export async function getMatriceMonth(nucleoId: string, yearMonth: string): Promise<MatriceMonth> {
+  const snap = await getDoc(doc(db, 'nuclei', nucleoId, 'matrice', yearMonth))
+  return snap.exists() ? (snap.data() as MatriceMonth) : {}
+}
+
 export function subscribeMatrice(
   nucleoId: string,
   yearMonth: string,

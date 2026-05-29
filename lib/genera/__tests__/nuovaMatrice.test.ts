@@ -96,6 +96,23 @@ describe('generateNuovaMatrice', () => {
     expect(countOnDay(matrice, 1, 'P2')).toBe(2)
   })
 
+  it('continues a night across months: prev last day N1 → day1 N2, day2 R', () => {
+    const { matrice } = generateNuovaMatrice({
+      operators: ops(12, 2), year: 2026, month: 6, exceptions: [], shiftCatalog: CATALOG,
+      prevLastByOp: { ft0: 'N1' },
+    })
+    expect(matrice.ft0[1]).toBe('N2')
+    expect(matrice.ft0[2]).toBe('R')
+  })
+
+  it('continues across months: prev last day N2 (smonto) → day1 R', () => {
+    const { matrice } = generateNuovaMatrice({
+      operators: ops(12, 2), year: 2026, month: 6, exceptions: [], shiftCatalog: CATALOG,
+      prevLastByOp: { ft0: 'N2' },
+    })
+    expect(matrice.ft0[1]).toBe('R')
+  })
+
   it('reports uncovered slots when staff is insufficient', () => {
     const { report } = generateNuovaMatrice({
       operators: ops(2, 0), year: 2026, month: 6, exceptions: [], shiftCatalog: CATALOG,
