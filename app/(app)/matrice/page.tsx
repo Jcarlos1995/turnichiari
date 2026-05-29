@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { MatriceGrid } from '@/components/matrice/MatriceGrid'
 import { GeneraMeseModal } from '@/components/matrice/GeneraMeseModal'
 import { GeneraNuovaMatriceModal } from '@/components/matrice/GeneraNuovaMatriceModal'
+import { EccezioniModal } from '@/components/matrice/EccezioniModal'
 import { useAuth } from '@/hooks/useAuth'
 import { useNucleo } from '@/hooks/useNucleo'
 import { getGenerationReport } from '@/lib/firebase/firestore'
@@ -19,6 +20,7 @@ export default function MatricePage() {
   const [month, setMonth] = useState(CURRENT_MONTH)
   const [showGenModal, setShowGenModal] = useState(false)
   const [showNuovaModal, setShowNuovaModal] = useState(false)
+  const [showEccezioniModal, setShowEccezioniModal] = useState(false)
   const [showGenMenu, setShowGenMenu] = useState(false)
   const [uncovered, setUncovered] = useState<UncoveredSlot[]>([])
   const { allShiftTypes } = useNucleo(user?.nucleoId ?? 'nucleo-b')
@@ -86,7 +88,15 @@ export default function MatricePage() {
         )}
 
         {canGenerate && (
-          <div className="ml-auto relative">
+          <button
+            onClick={() => setShowEccezioniModal(true)}
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+          >
+            <span>📋</span><span>Eccezioni</span>
+          </button>
+        )}
+        {canGenerate && (
+          <div className="relative">
             <button
               onClick={() => setShowGenMenu(m => !m)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
@@ -159,6 +169,16 @@ export default function MatricePage() {
           currentUser={user}
           onClose={() => setShowNuovaModal(false)}
           onGenerated={() => { /* il banner si aggiorna via effetto su showNuovaModal */ }}
+        />
+      )}
+
+      {showEccezioniModal && (
+        <EccezioniModal
+          nucleoId={nucleoId}
+          year={year}
+          month={month}
+          operators={operatorsRef.current}
+          onClose={() => setShowEccezioniModal(false)}
         />
       )}
     </div>

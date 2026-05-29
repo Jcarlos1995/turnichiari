@@ -7,7 +7,7 @@ import {
 import { db } from './config'
 import type { Nucleo, Operator, MatriceMonth, MatriceDayEntry, ContractType } from '@/lib/types'
 import { NIGHT, nextSmontoTarget } from '@/lib/shifts/nightShift'
-import type { GenerationReport } from '@/lib/genera/nuovaMatrice'
+import type { GenerationReport, ExceptionRange } from '@/lib/genera/nuovaMatrice'
 import { weeksOfMonth } from '@/lib/bancaore/bancaOre'
 import { continueStartPhase, type PtPhase } from '@/lib/genera/ptSchedule'
 
@@ -373,6 +373,17 @@ export async function getGenerationReport(
 ): Promise<GenerationReport> {
   const snap = await getDoc(doc(db, 'nuclei', nucleoId, 'matriceMeta', yearMonth))
   return snap.exists() ? (snap.data() as GenerationReport) : { uncovered: [] }
+}
+
+/** Reads the saved exceptions (ferie/104/…) for a month. Returns [] if absent. */
+export async function getExceptions(nucleoId: string, yearMonth: string): Promise<ExceptionRange[]> {
+  const snap = await getDoc(doc(db, 'nuclei', nucleoId, 'eccezioni', yearMonth))
+  return snap.exists() ? ((snap.data() as { items?: ExceptionRange[] }).items ?? []) : []
+}
+
+/** Saves the exceptions list for a month (overwrites). */
+export async function setExceptions(nucleoId: string, yearMonth: string, items: ExceptionRange[]): Promise<void> {
+  await setDoc(doc(db, 'nuclei', nucleoId, 'eccezioni', yearMonth), { items })
 }
 
 export type PtPhaseDoc = Record<string, PtPhase>
