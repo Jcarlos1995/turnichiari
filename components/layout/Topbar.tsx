@@ -49,6 +49,12 @@ export function Topbar({ user, nucleoName }: TopbarProps) {
             >
               Impostazioni
             </Link>
+            <Link
+              href="/impostazioni/banca-ore"
+              className="text-xs text-slate-400 hover:text-white transition-colors"
+            >
+              Banca ore
+            </Link>
           </>
         )}
         <span className="text-slate-400 text-xs hidden sm:block">{user.name}</span>
