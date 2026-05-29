@@ -146,11 +146,11 @@ export function MatriceGrid({
           d => (remainingByDay[d]?.length ?? 0) > 0 || (assignmentsByDay[d]?.length ?? 0) > 0
         )
         return (
-          <div
-            key={wi}
-            className="grid gap-1 mb-6"
-            style={{ gridTemplateColumns: `160px repeat(${weekDays.length}, minmax(36px, 1fr))` }}
-          >
+          <div key={wi} className="border border-slate-200 rounded-xl bg-white shadow-sm p-3 mb-5 overflow-x-auto">
+            <div
+              className="grid gap-1"
+              style={{ gridTemplateColumns: `160px repeat(${weekDays.length}, minmax(36px, 1fr))` }}
+            >
             <div className="h-9 flex items-center px-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
               Sett. {wi + 1}
             </div>
@@ -212,6 +212,7 @@ export function MatriceGrid({
                 ))}
               </>
             )}
+            </div>
           </div>
         )
       })}
