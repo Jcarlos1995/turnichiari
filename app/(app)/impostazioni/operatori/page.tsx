@@ -55,7 +55,7 @@ export default function OperatoriPage() {
   const activeCount = operators.filter(op => op.active !== false).length
 
   return (
-    <div className="flex-1 overflow-auto p-6 max-w-3xl">
+    <div className="flex-1 overflow-auto p-6 max-w-6xl">
       {/* Back link */}
       <Link
         href="/matrice"
@@ -64,6 +64,8 @@ export default function OperatoriPage() {
         ← Matrice
       </Link>
 
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+      <div className="flex-1 w-full max-w-3xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -126,9 +128,10 @@ export default function OperatoriPage() {
           })
         )}
       </div>
+      </div>
 
-      {/* Autosostituzione pool (condiviso tra le 3 RAA) */}
-      <div className="mt-8">
+      {/* Autosostituzione pool (condiviso tra le 3 RAA) — colonna destra */}
+      <div className="w-full lg:w-80 flex-shrink-0">
         <h2 className="text-base font-bold text-slate-900">Autosostituzione</h2>
         <p className="text-sm text-slate-500 mb-3">
           Operatori jolly condivisi tra i nuclei, usati per coprire i turni scoperti.
@@ -167,6 +170,7 @@ export default function OperatoriPage() {
             ))
           )}
         </div>
+      </div>
       </div>
 
       {/* Nuovo operatore modal */}
