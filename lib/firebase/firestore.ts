@@ -1,11 +1,12 @@
 import {
   doc, getDoc, setDoc, getDocs,
   collection, query, where, orderBy,
-  onSnapshot, writeBatch,
+  onSnapshot, writeBatch, deleteField,
   type Unsubscribe
 } from 'firebase/firestore'
 import { db } from './config'
 import type { Nucleo, Operator, MatriceMonth, MatriceDayEntry, ContractType } from '@/lib/types'
+import { NIGHT, nextSmontoTarget } from '@/lib/shifts/nightShift'
 
 export async function getNucleo(nucleoId: string): Promise<Nucleo | null> {
   const snap = await getDoc(doc(db, 'nuclei', nucleoId))
@@ -236,6 +237,69 @@ export async function updateOperator(
   if (data.name !== undefined) {
     batch.set(doc(db, 'users', uid), { name: data.name }, { merge: true })
   }
+
+  await batch.commit()
+}
+
+/** Formats a year+month (1-based) as the 'YYYY-MM' matrice document id. */
+function matriceYearMonth(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, '0')}`
+}
+
+/**
+ * Assigns a manual night shift: writes N1 on (year, month, day) and N2 (smonto)
+ * on the following day — which may fall into the next month/year. Both cells are
+ * written atomically via writeBatch. Always overwrites existing content.
+ * isOverride is applied as isManualOverride on both cells.
+ */
+export async function setNightShift(
+  nucleoId: string,
+  year: number,
+  month: number,
+  day: number,
+  operatorId: string,
+  updatedBy: string,
+  isOverride: boolean
+): Promise<void> {
+  const target = nextSmontoTarget(year, month, day)
+  const updatedAt = Date.now()
+  const batch = writeBatch(db)
+
+  batch.set(
+    doc(db, 'nuclei', nucleoId, 'matrice', matriceYearMonth(year, month)),
+    { [operatorId]: { [day]: { code: NIGHT.start, updatedAt, updatedBy, isManualOverride: isOverride } } },
+    { merge: true }
+  )
+  batch.set(
+    doc(db, 'nuclei', nucleoId, 'matrice', matriceYearMonth(target.year, target.month)),
+    { [operatorId]: { [target.day]: { code: NIGHT.smonto, updatedAt, updatedBy, isManualOverride: isOverride } } },
+    { merge: true }
+  )
+
+  await batch.commit()
+}
+
+/**
+ * Removes the smonto (N2) paired with an N1 at (year, month, day).
+ * Relies on the pair invariant: an N1 always has an N2 the following day,
+ * so the deleteField is safe without an extra read. Called only when the
+ * previous code of the edited cell was NIGHT.start.
+ */
+export async function clearNightSmonto(
+  nucleoId: string,
+  year: number,
+  month: number,
+  day: number,
+  operatorId: string
+): Promise<void> {
+  const target = nextSmontoTarget(year, month, day)
+  const batch = writeBatch(db)
+
+  batch.set(
+    doc(db, 'nuclei', nucleoId, 'matrice', matriceYearMonth(target.year, target.month)),
+    { [operatorId]: { [target.day]: deleteField() } },
+    { merge: true }
+  )
 
   await batch.commit()
 }
