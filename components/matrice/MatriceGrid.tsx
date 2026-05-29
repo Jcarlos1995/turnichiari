@@ -7,16 +7,18 @@ import { useNucleo } from '@/hooks/useNucleo'
 import { updateMatriceCell, setNightShift, clearNightSmonto } from '@/lib/firebase/firestore'
 import { NIGHT } from '@/lib/shifts/nightShift'
 import type { AppUser, Operator, MatriceMonth } from '@/lib/types'
+import type { UncoveredSlot } from '@/lib/genera/nuovaMatrice'
 
 interface MatriceGridProps {
   nucleoId: string
   year: number
   month: number
   currentUser: AppUser
+  uncovered?: UncoveredSlot[]
   onDataReady?: (operators: Operator[], matrice: MatriceMonth) => void
 }
 
-export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }: MatriceGridProps) {
+export function MatriceGrid({ nucleoId, year, month, currentUser, uncovered = [], onDataReady }: MatriceGridProps) {
   const yearMonth = `${year}-${String(month).padStart(2, '0')}`
   const { matrice, operators, loading: matriceLoading } = useMatrice(nucleoId, yearMonth)
   const { allShiftTypes, loading: nucleoLoading } = useNucleo(nucleoId)
@@ -79,6 +81,12 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }:
     return aPT - bPT
   })
 
+  // Uncovered slots grouped by day, for the "Autosostituzione" row at the bottom
+  const uncoveredByDay: Record<number, string[]> = {}
+  for (const u of uncovered) {
+    (uncoveredByDay[u.day] ??= []).push(u.shift === 'Notte' ? 'N' : u.shift)
+  }
+
   if (matriceLoading || nucleoLoading) {
     return <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">Caricamento matrice...</div>
   }
@@ -127,6 +135,32 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }:
             </Fragment>
           )
         })}
+
+        {/* Riga "Autosostituzione": un riquadro rosso nei giorni con turni scoperti */}
+        {uncovered.length > 0 && (
+          <>
+            <div style={{ gridColumn: '1 / -1' }} className="mt-3 border-t border-slate-200" />
+            <div className="h-9 flex items-center px-2 text-xs font-semibold text-red-600 sticky left-0 z-10 bg-slate-50">
+              Autosostituzione
+            </div>
+            {Array.from({ length: daysInMonth }, (_, i) => {
+              const day = i + 1
+              const codes = uncoveredByDay[day]
+              return (
+                <div key={day} className="h-9 flex items-center justify-center">
+                  {codes && (
+                    <span
+                      className="border-2 border-red-500 rounded text-[9px] font-bold text-red-600 px-1 py-0.5 leading-none"
+                      title={`Turni scoperti il giorno ${day}: ${codes.join(', ')}`}
+                    >
+                      {codes.join('/')}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+          </>
+        )}
       </div>
     </div>
   )

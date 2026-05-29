@@ -140,6 +140,7 @@ export default function MatricePage() {
         year={year}
         month={month}
         currentUser={user}
+        uncovered={uncovered}
         onDataReady={(ops, mat) => {
           operatorsRef.current = ops
           matriceRef.current = mat
