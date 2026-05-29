@@ -25,6 +25,7 @@ export default function MatricePage() {
   const [uncovered, setUncovered] = useState<UncoveredSlot[]>([])
   const [autosostPool, setAutosostPool] = useState<AutosostOperator[]>([])
   const [autosostAssignments, setAutosostAssignments] = useState<AutosostAssignment[]>([])
+  const [autosostError, setAutosostError] = useState<string | null>(null)
   const { allShiftTypes } = useNucleo(user?.nucleoId ?? 'nucleo-b')
 
   // Keep latest operators + matrice from the grid
@@ -48,12 +49,20 @@ export default function MatricePage() {
   const canGenerate = user.role === 'raa' || user.role === 'coordinatrice'
 
   async function handleAutosostAssign(day: number, shift: string, op: AutosostOperator) {
+    // Un jolly non può coprire più di un turno lo stesso giorno NELLO STESSO nucleo
+    // (può però coprire lo stesso turno in un altro nucleo — doc separato, non validato qui).
+    if (autosostAssignments.some(a => a.day === day && a.autoOpId === op.id)) {
+      setAutosostError(`${op.name} copre già un turno il giorno ${day} in questo nucleo.`)
+      return
+    }
+    setAutosostError(null)
     const next = [...autosostAssignments, { day, shift, autoOpId: op.id, autoOpName: op.name }]
     setAutosostAssignments(next)
     await saveAutosostAssignments(nucleoId, genYearMonth, next)
   }
 
   async function handleAutosostUnassign(day: number, shift: string, autoOpId: string) {
+    setAutosostError(null)
     let removed = false
     const next = autosostAssignments.filter(a => {
       if (!removed && a.day === day && a.shift === shift && a.autoOpId === autoOpId) { removed = true; return false }
@@ -153,6 +162,12 @@ export default function MatricePage() {
             {uncovered.slice(0, 12).map(u => `G${u.day} ${u.shift}`).join(' · ')}
             {uncovered.length > 12 ? ` … +${uncovered.length - 12}` : ''}
           </p>
+        </div>
+      )}
+
+      {autosostError && (
+        <div className="mx-3 mt-2 border border-red-300 bg-red-50 rounded-lg px-3 py-1.5 text-xs text-red-700">
+          ⚠ {autosostError}
         </div>
       )}
 
