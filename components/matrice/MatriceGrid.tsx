@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 import { MatriceRow } from './MatriceRow'
 import { DayHeader } from './DayHeader'
 import { useMatrice } from '@/hooks/useMatrice'
@@ -72,6 +72,13 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }:
     }
   }, [nucleoId, year, month, currentUser.uid])
 
+  // Part-time operators go to the bottom (stable: preserves the name order within each group)
+  const sortedOperators = [...operators].sort((a, b) => {
+    const aPT = a.contractType === 'parttime' ? 1 : 0
+    const bPT = b.contractType === 'parttime' ? 1 : 0
+    return aPT - bPT
+  })
+
   if (matriceLoading || nucleoLoading) {
     return <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">Caricamento matrice...</div>
   }
@@ -89,23 +96,37 @@ export function MatriceGrid({ nucleoId, year, month, currentUser, onDataReady }:
           const isToday = date.toDateString() === today.toDateString()
           return <DayHeader key={day} day={day} date={date} isToday={isToday} isColHovered={hovered?.day === day} />
         })}
-        {operators.map(op => (
-          <MatriceRow
-            key={op.id}
-            operator={op}
-            matrice={matrice}
-            daysInMonth={daysInMonth}
-            year={year}
-            month={month}
-            allShiftTypes={allShiftTypes}
-            editable={canEdit}
-            onCellSelect={handleCellSelect}
-            onCellNight={handleCellNight}
-            hoveredOperatorId={hovered?.operatorId ?? null}
-            hoveredDay={hovered?.day ?? null}
-            onCellHover={handleCellHover}
-          />
-        ))}
+        {sortedOperators.map((op, idx) => {
+          const isPT = op.contractType === 'parttime'
+          const prevPT = idx > 0 && sortedOperators[idx - 1].contractType === 'parttime'
+          const showPTSeparator = isPT && !prevPT
+          return (
+            <Fragment key={op.id}>
+              {showPTSeparator && (
+                <div
+                  style={{ gridColumn: '1 / -1' }}
+                  className="mt-3 pb-0.5 px-2 flex items-end text-[10px] font-semibold text-purple-500 uppercase tracking-wide border-t border-slate-200 pt-2"
+                >
+                  Part-time
+                </div>
+              )}
+              <MatriceRow
+                operator={op}
+                matrice={matrice}
+                daysInMonth={daysInMonth}
+                year={year}
+                month={month}
+                allShiftTypes={allShiftTypes}
+                editable={canEdit}
+                onCellSelect={handleCellSelect}
+                onCellNight={handleCellNight}
+                hoveredOperatorId={hovered?.operatorId ?? null}
+                hoveredDay={hovered?.day ?? null}
+                onCellHover={handleCellHover}
+              />
+            </Fragment>
+          )
+        })}
       </div>
     </div>
   )
