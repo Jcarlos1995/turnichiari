@@ -16,20 +16,21 @@ export function AutosostCell({ day, uncoveredShifts, assignments, pool, editable
   const [openIdx, setOpenIdx] = useState<number | null>(null)
 
   if (uncoveredShifts.length === 0 && assignments.length === 0) {
-    return <div className="h-9" />
+    return <div className="h-8" />
   }
 
   return (
-    <div className="h-9 flex flex-col items-center justify-center gap-0.5 relative py-0.5">
+    <div className="flex flex-col gap-1 justify-center">
       {assignments.map((a, i) => (
         <button
           key={`a${i}`}
           disabled={!editable}
           onClick={() => onUnassign(day, a.shift, a.autoOpId)}
           title={`${a.shift} — ${a.autoOpName} (clicca per rimuovere)`}
-          className="text-[8px] leading-none px-1 py-0.5 rounded bg-green-100 text-green-700 border border-green-300 hover:bg-green-200"
+          className="h-8 w-full rounded border border-green-400 bg-green-100 text-green-700 flex flex-col items-center justify-center leading-none hover:bg-green-200 transition-colors"
         >
-          {a.shift}:{a.autoOpName.split(' ')[0]}
+          <span className="text-xs font-bold">{a.shift}</span>
+          <span className="text-[8px] truncate max-w-full px-0.5">{a.autoOpName.split(' ')[0]}</span>
         </button>
       ))}
 
@@ -39,7 +40,7 @@ export function AutosostCell({ day, uncoveredShifts, assignments, pool, editable
             disabled={!editable}
             onClick={() => setOpenIdx(openIdx === i ? null : i)}
             title={`Scoperto: ${shift}`}
-            className="text-[9px] leading-none font-bold text-red-600 border-2 border-red-500 rounded px-1 py-0.5 hover:bg-red-50 disabled:opacity-60"
+            className="h-8 w-full rounded border-2 border-red-500 text-red-600 font-bold text-xs flex items-center justify-center hover:bg-red-50 disabled:opacity-60 transition-colors"
           >
             {shift}
           </button>
