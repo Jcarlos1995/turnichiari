@@ -84,7 +84,18 @@ export function MatriceGrid({
     }
   }, [nucleoId, year, month, currentUser.uid])
 
-  const weeks = weeksOfMonth(year, month)
+  // Settimane Lun–Dom. Se il mese non inizia di lunedì, i giorni iniziali
+  // (prima del primo lunedì) vengono uniti alla prima settimana completa,
+  // così il primo blocco arriva fino alla prima domenica senza orfani.
+  const rawWeeks = weeksOfMonth(year, month)
+  let weeks = rawWeeks
+  if (rawWeeks.length > 1) {
+    const firstDay = rawWeeks[0][0]
+    const startsMonday = (new Date(year, month - 1, firstDay).getDay() + 6) % 7 === 0
+    if (!startsMonday) {
+      weeks = [[...rawWeeks[0], ...rawWeeks[1]], ...rawWeeks.slice(2)]
+    }
+  }
 
   // Giorno della prima notte (N1) di un operatore DENTRO un insieme di giorni; Infinity se nessuna
   const firstNightDayIn = (opId: string, days: number[]): number => {
