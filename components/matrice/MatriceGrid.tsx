@@ -157,7 +157,7 @@ export function MatriceGrid({
         {showAutosostRow && (
           <>
             <div style={{ gridColumn: '1 / -1' }} className="mt-3 border-t border-slate-200" />
-            <div className="h-9 flex items-center px-2 text-xs font-semibold text-red-600 sticky left-0 z-10 bg-slate-50">
+            <div className="h-9 flex items-center px-2 text-[10px] font-semibold uppercase tracking-wide text-red-600 sticky left-0 z-10 bg-slate-50">
               Autosostituzione
             </div>
             {Array.from({ length: daysInMonth }, (_, i) => {

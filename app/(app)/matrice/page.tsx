@@ -48,6 +48,13 @@ export default function MatricePage() {
   const nucleoId = user.nucleoId ?? 'nucleo-b'
   const canGenerate = user.role === 'raa' || user.role === 'coordinatrice'
 
+  // Slot ancora scoperti = scoperti dalla generazione meno le assegnazioni di autosostituzione
+  const remainingSlots = uncovered.flatMap(u => {
+    const assigned = autosostAssignments.filter(a => a.day === u.day && a.shift === u.shift).length
+    const rem = Math.max(0, u.missing - assigned)
+    return Array.from({ length: rem }, () => ({ day: u.day, shift: u.shift }))
+  })
+
   async function handleAutosostAssign(day: number, shift: string, op: AutosostOperator) {
     // Un jolly non può coprire più di un turno lo stesso giorno NELLO STESSO nucleo
     // (può però coprire lo stesso turno in un altro nucleo — doc separato, non validato qui).
@@ -153,14 +160,14 @@ export default function MatricePage() {
         )}
       </div>
 
-      {uncovered.length > 0 && (
+      {remainingSlots.length > 0 && (
         <div className="mx-3 mt-2 border-2 border-red-400 bg-red-50 rounded-lg px-3 py-2">
           <p className="text-xs font-semibold text-red-700">
-            ⚠ {uncovered.length} turni scoperti da coprire (autosostituzione):
+            ⚠ {remainingSlots.length} turni scoperti da coprire (autosostituzione):
           </p>
           <p className="text-[11px] text-red-600 mt-0.5">
-            {uncovered.slice(0, 12).map(u => `G${u.day} ${u.shift}`).join(' · ')}
-            {uncovered.length > 12 ? ` … +${uncovered.length - 12}` : ''}
+            {remainingSlots.slice(0, 12).map(s => `G${s.day} ${s.shift}`).join(' · ')}
+            {remainingSlots.length > 12 ? ` … +${remainingSlots.length - 12}` : ''}
           </p>
         </div>
       )}
