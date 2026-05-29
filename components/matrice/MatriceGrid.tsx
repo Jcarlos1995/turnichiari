@@ -84,11 +84,27 @@ export function MatriceGrid({
     }
   }, [nucleoId, year, month, currentUser.uid])
 
-  // Part-time operators go to the bottom (stable: preserves the name order within each group)
+  // Giorno della prima notte (N1) di un operatore nel mese; Infinity se non ne ha
+  const firstNightDay = (opId: string): number => {
+    const data = matrice[opId] ?? {}
+    let min = Infinity
+    for (const [d, e] of Object.entries(data)) {
+      if (e?.code === NIGHT.start) { const n = Number(d); if (n < min) min = n }
+    }
+    return min
+  }
+
+  // Ordine: FT prima (ordinati per giorno della prima notte, poi alfabetico),
+  // poi i part-time in fondo (alfabetico).
   const sortedOperators = [...operators].sort((a, b) => {
     const aPT = a.contractType === 'parttime' ? 1 : 0
     const bPT = b.contractType === 'parttime' ? 1 : 0
-    return aPT - bPT
+    if (aPT !== bPT) return aPT - bPT
+    if (aPT === 1) return a.name.localeCompare(b.name)
+    const an = firstNightDay(a.id)
+    const bn = firstNightDay(b.id)
+    if (an !== bn) return an - bn
+    return a.name.localeCompare(b.name)
   })
 
   // Per-day: remaining uncovered shifts (after subtracting autosost assignments) + assignments
