@@ -56,7 +56,7 @@ export default function OperatoriPage() {
   const activeCount = operators.filter(op => op.active !== false).length
 
   return (
-    <div className="flex-1 overflow-auto p-6 max-w-6xl">
+    <div className="flex-1 overflow-auto p-6">
       {/* Back link */}
       <Link
         href="/matrice"
@@ -66,7 +66,7 @@ export default function OperatoriPage() {
       </Link>
 
       <div className="flex flex-col lg:flex-row gap-6 items-start">
-      <div className="flex-1 w-full max-w-3xl">
+      <div className="flex-1 w-full min-w-0">
       {/* Header */}
       <h2 className="text-base font-bold text-slate-900">Operatori</h2>
       <p className="text-sm text-slate-500 mb-3 min-h-[2.5rem]">
