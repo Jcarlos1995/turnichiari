@@ -3,6 +3,7 @@ import type { ShiftType, ContractType } from '@/lib/types'
 
 const CATALOG: ShiftType[] = [
   { code: 'M1', label: 'M1', startTime: '06:30', endTime: '13:30', color: '#a', operatorsPerDay: 2, isPartTime: false, isSystem: false },
+  { code: 'M1.5', label: 'M1.5', startTime: '06:30', endTime: '13:30', color: '#a2', operatorsPerDay: 1, isPartTime: false, isSystem: false },
   { code: 'M2', label: 'M2', startTime: '07:00', endTime: '14:00', color: '#b', operatorsPerDay: 1, isPartTime: false, isSystem: false },
   { code: 'MP', label: 'MP', startTime: '07:00', endTime: '12:00', color: '#c', operatorsPerDay: 1, isPartTime: true, isSystem: false },
   { code: 'P1', label: 'P1', startTime: '14:00', endTime: '21:00', color: '#d', operatorsPerDay: 1, isPartTime: false, isSystem: false },
@@ -30,7 +31,8 @@ describe('generateNuovaMatrice', () => {
       operators: ops(12, 2), year: 2026, month: 6, exceptions: [], shiftCatalog: CATALOG,
     })
     expect(countOnDay(matrice, 1, 'N1')).toBe(1)
-    expect(countOnDay(matrice, 1, 'M1')).toBe(2)
+    expect(countOnDay(matrice, 1, 'M1')).toBe(1)
+    expect(countOnDay(matrice, 1, 'M1.5')).toBe(1)
     expect(countOnDay(matrice, 1, 'M2')).toBe(1)
     expect(countOnDay(matrice, 1, 'MP')).toBe(1)
     expect(countOnDay(matrice, 1, 'P1')).toBe(1)
@@ -70,7 +72,7 @@ describe('generateNuovaMatrice', () => {
     const { matrice } = generateNuovaMatrice({
       operators: ops(12, 2), year: 2026, month: 6, exceptions: [], shiftCatalog: CATALOG,
     })
-    const DAY_CODES = ['M1', 'M2', 'MP', 'P1', 'P2']
+    const DAY_CODES = ['M1', 'M1.5', 'M2', 'MP', 'P1', 'P2']
     for (const days of Object.values(matrice)) {
       let runCode: string | null = null
       let runLen = 0

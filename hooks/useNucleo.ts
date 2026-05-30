@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getNucleo } from '@/lib/firebase/firestore'
-import { SYSTEM_SHIFTS, N1_SHIFT, N2_SHIFT, type Nucleo, type ShiftType } from '@/lib/types'
+import { SYSTEM_SHIFTS, N1_SHIFT, N2_SHIFT, M1_5_SHIFT, type Nucleo, type ShiftType } from '@/lib/types'
 
 export function useNucleo(nucleoId: string | null) {
   const [nucleo, setNucleo] = useState<Nucleo | null>(null)
@@ -24,6 +24,7 @@ export function useNucleo(nucleoId: string | null) {
   const codes = new Set(base.map(s => s.code))
   if (!codes.has('N1')) base.push(N1_SHIFT)
   if (!codes.has('N2')) base.push(N2_SHIFT)
+  if (!codes.has('M1.5')) base.push(M1_5_SHIFT)
   const allShiftTypes: ShiftType[] = base.map(s =>
     NIGHT_COLORS[s.code] ? { ...s, color: NIGHT_COLORS[s.code] } : s
   )
