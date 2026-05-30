@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
-import { subscribeOperators, subscribeAutosost, removeAutosost, type AutosostOperator } from '@/lib/firebase/firestore'
+import { subscribeOperators, subscribeAutosost, removeAutosost, subscribeRaaList, type AutosostOperator, type RaaUser } from '@/lib/firebase/firestore'
 import { NuovoOperatoreModal } from '@/components/impostazioni/NuovoOperatoreModal'
 import { EditaOperatoreModal } from '@/components/impostazioni/EditaOperatoreModal'
 import type { Operator } from '@/lib/types'
@@ -15,6 +15,8 @@ export default function OperatoriPage() {
   const [editingOperator, setEditingOperator] = useState<Operator | null>(null)
   const [autosost, setAutosost] = useState<AutosostOperator[]>([])
   const [showAutoModal, setShowAutoModal] = useState(false)
+  const [raaList, setRaaList] = useState<RaaUser[]>([])
+  const isCoordinatrice = user?.role === 'coordinatrice'
 
   // Il coordinatore non ha un nucleo proprio: default a nucleo-b per gestire gli operatori
   const nucleoId = user?.nucleoId ?? 'nucleo-b'
@@ -33,6 +35,11 @@ export default function OperatoriPage() {
     if (!user || user.role === 'oss') return
     return subscribeAutosost(setAutosost)
   }, [user])
+
+  useEffect(() => {
+    if (!isCoordinatrice) return
+    return subscribeRaaList(setRaaList)
+  }, [isCoordinatrice])
 
   if (!user || user.role === 'oss') {
     return <div className="p-6 text-sm text-slate-500">Accesso non autorizzato.</div>
@@ -153,6 +160,31 @@ export default function OperatoriPage() {
           )}
         </div>
       </div>
+
+      {/* Colonna RAA — solo per la Coordinatrice */}
+      {isCoordinatrice && (
+        <div className="w-full lg:w-72 flex-shrink-0">
+          <h2 className="text-base font-bold text-slate-900">RAA</h2>
+          <p className="text-sm text-slate-500 mb-3 min-h-[2.5rem]">
+            Responsabili di nucleo. Creale con &quot;Nuovo operatore&quot; → Ruolo: RAA.
+          </p>
+          <div className="h-9 mb-3" aria-hidden />
+          <div className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100">
+            {raaList.length === 0 ? (
+              <p className="py-6 text-center text-sm text-slate-400">Nessuna RAA registrata.</p>
+            ) : (
+              raaList.map(r => (
+                <div key={r.id} className="flex items-center gap-3 px-4 py-3">
+                  <span className="flex-1 text-sm font-medium text-slate-800 truncate">{r.name}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-indigo-100 text-indigo-700">
+                    {r.nucleoId ? `Nucleo ${r.nucleoId.split('-')[1]?.toUpperCase() ?? ''}` : '—'}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
       </div>
 
       {/* Nuovo operatore modal */}

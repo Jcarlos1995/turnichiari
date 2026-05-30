@@ -395,6 +395,19 @@ export async function getGenerationReport(
   return snap.exists() ? (snap.data() as GenerationReport) : { uncovered: [] }
 }
 
+// ── RAA list (solo Coordinatrice può leggere tutti gli users) ───────────────
+export interface RaaUser { id: string; name: string; email: string; nucleoId: string | null }
+
+/** Subscribes to the list of RAA users (role == 'raa'). Coordinatrice only. */
+export function subscribeRaaList(callback: (raas: RaaUser[]) => void): Unsubscribe {
+  const q = query(collection(db, 'users'), where('role', '==', 'raa'))
+  return onSnapshot(q, snap => {
+    const list = snap.docs.map(d => ({ id: d.id, ...(d.data() as Omit<RaaUser, 'id'>) }))
+    list.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
+    callback(list)
+  })
+}
+
 // ── Autosostituzione (pool condiviso cross-nucleo) ──────────────────────────
 export interface AutosostOperator { id: string; name: string }
 
