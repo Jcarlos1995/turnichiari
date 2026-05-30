@@ -8,6 +8,7 @@ const CATALOG: ShiftType[] = [
   { code: 'MP', label: 'MP', startTime: '07:00', endTime: '12:00', color: '#c', operatorsPerDay: 1, isPartTime: true, isSystem: false },
   { code: 'P1', label: 'P1', startTime: '14:00', endTime: '21:00', color: '#d', operatorsPerDay: 1, isPartTime: false, isSystem: false },
   { code: 'P2', label: 'P2', startTime: '14:30', endTime: '21:00', color: '#e', operatorsPerDay: 2, isPartTime: false, isSystem: false },
+  { code: 'P2.5', label: 'P2.5', startTime: '14:30', endTime: '21:00', color: '#e2', operatorsPerDay: 1, isPartTime: false, isSystem: false },
   { code: 'N1', label: 'N1', startTime: '21:00', endTime: '00:00', color: '#f', operatorsPerDay: 1, isPartTime: false, isSystem: false },
   { code: 'N2', label: 'N2', startTime: '00:00', endTime: '06:30', color: '#g', operatorsPerDay: 1, isPartTime: false, isSystem: false },
   { code: 'R', label: 'Riposo', startTime: '', endTime: '', color: '#h', operatorsPerDay: 0, isPartTime: false, isSystem: true },
@@ -36,7 +37,8 @@ describe('generateNuovaMatrice', () => {
     expect(countOnDay(matrice, 1, 'M2')).toBe(1)
     expect(countOnDay(matrice, 1, 'MP')).toBe(1)
     expect(countOnDay(matrice, 1, 'P1')).toBe(1)
-    expect(countOnDay(matrice, 1, 'P2')).toBe(2)
+    expect(countOnDay(matrice, 1, 'P2')).toBe(1)
+    expect(countOnDay(matrice, 1, 'P2.5')).toBe(1)
   })
 
   it('places the night block N1→N2→R for the night operator', () => {
@@ -72,7 +74,7 @@ describe('generateNuovaMatrice', () => {
     const { matrice } = generateNuovaMatrice({
       operators: ops(12, 2), year: 2026, month: 6, exceptions: [], shiftCatalog: CATALOG,
     })
-    const DAY_CODES = ['M1', 'M1.5', 'M2', 'MP', 'P1', 'P2']
+    const DAY_CODES = ['M1', 'M1.5', 'M2', 'MP', 'P1', 'P2', 'P2.5']
     for (const days of Object.values(matrice)) {
       let runCode: string | null = null
       let runLen = 0
@@ -94,8 +96,8 @@ describe('generateNuovaMatrice', () => {
     })
     // il PT mantiene il suo turno fisso
     expect(matrice.pt0[1]).toBe('P2')
-    // copertura P2 totale del giorno 1 = 2 (incluso il PT), non 3
-    expect(countOnDay(matrice, 1, 'P2')).toBe(2)
+    // copertura P2 ora è 1 posto (l'altro è P2.5); il PT lo copre → totale 1
+    expect(countOnDay(matrice, 1, 'P2')).toBe(1)
   })
 
   it('continues a night across months: prev last day N1 → day1 N2, day2 R', () => {

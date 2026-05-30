@@ -6,9 +6,9 @@ import type { ContractType, ShiftType } from '@/lib/types'
 
 /** Required headcount per day shift (fixed, 7 days a week).
  *  La copertura mattutina è 1 M1 + 1 M1.5 (identici, solo colore diverso). */
-export const DAY_COVERAGE: Record<string, number> = { P2: 2, M1: 1, 'M1.5': 1, M2: 1, P1: 1, MP: 1 }
-/** Fill order: scarce (2-people) shifts first. */
-export const DAY_SLOT_ORDER = ['P2', 'M1', 'M1.5', 'M2', 'P1', 'MP']
+export const DAY_COVERAGE: Record<string, number> = { P2: 1, 'P2.5': 1, M1: 1, 'M1.5': 1, M2: 1, P1: 1, MP: 1 }
+/** Fill order (1 posto ciascuno; le coppie M1/M1.5 e P2/P2.5 coprono i 2 posti storici). */
+export const DAY_SLOT_ORDER = ['P2', 'P2.5', 'M1', 'M1.5', 'M2', 'P1', 'MP']
 export const NIGHT_START = 'N1'
 export const NIGHT_SMONTO = 'N2'
 const MAX_WEEKLY_HOURS = 48

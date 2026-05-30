@@ -49,6 +49,13 @@ export const M1_5_SHIFT: ShiftType = {
   color: '#bfdbfe', operatorsPerDay: 1, isPartTime: false, isSystem: false,
 }
 
+// P2.5: identico a P2 (stessi orari/ore), solo colore diverso. La copertura
+// di P2 (2 posti) viene assegnata come 1 P2 + 1 P2.5.
+export const P2_5_SHIFT: ShiftType = {
+  code: 'P2.5', label: 'Pomeriggio 2.5', startTime: '14:30', endTime: '21:00',
+  color: '#fbcfe8', operatorsPerDay: 1, isPartTime: false, isSystem: false,
+}
+
 export const N2_SHIFT: ShiftType = {
   code: 'N2', label: 'Notte 2', startTime: '00:00', endTime: '06:30',
   color: '#bfdbfe', operatorsPerDay: 1, isPartTime: false, isSystem: false,
