@@ -30,7 +30,7 @@ export function Topbar({ user, nucleoName }: TopbarProps) {
   const initials = user.name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)
 
   return (
-    <header className="h-14 bg-slate-900 flex items-center px-4 gap-3 flex-shrink-0 shadow-sm">
+    <header className="h-14 bg-slate-900 flex items-center px-4 gap-3 flex-shrink-0 border-b border-white/10">
       {/* Brand */}
       <Link href="/matrice" className="flex items-center gap-2 group">
         <span className="grid place-items-center h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-[11px] font-bold shadow-sm">
@@ -63,10 +63,11 @@ export function Topbar({ user, nucleoName }: TopbarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`text-xs px-2.5 py-1.5 rounded-lg transition-colors ${
+                aria-current={active ? 'page' : undefined}
+                className={`text-xs px-2.5 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 ${
                   active
-                    ? 'bg-slate-800 text-white font-medium'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-blue-500/15 text-white font-medium ring-1 ring-inset ring-blue-400/30'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
               >
                 {item.label}
@@ -85,7 +86,7 @@ export function Topbar({ user, nucleoName }: TopbarProps) {
         <button
           onClick={handleSignOut}
           title="Esci"
-          className="flex items-center gap-1 text-xs text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-lg px-2 py-1.5 transition-colors"
+          className="flex items-center gap-1 text-xs text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-lg px-2 py-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60"
         >
           <span aria-hidden>⏻</span>
           <span className="hidden sm:block">Esci</span>
