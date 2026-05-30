@@ -12,7 +12,7 @@ const coordinatriceUser: AppUser = {
   role: 'coordinatrice', nucleoId: null
 }
 
-jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }) }))
+jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }), usePathname: () => '/matrice' }))
 jest.mock('@/lib/firebase/auth', () => ({ signOut: jest.fn() }))
 
 describe('Topbar', () => {

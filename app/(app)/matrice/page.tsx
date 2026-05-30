@@ -94,33 +94,35 @@ export default function MatricePage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="px-4 py-2 border-b border-slate-200 bg-white flex items-center gap-3">
-        <button
-          onClick={prevMonth}
-          className="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors text-base font-bold"
-          title="Mese precedente"
-        >
-          ‹
-        </button>
-
-        <h1 className="text-sm font-semibold text-slate-700 w-44 text-center capitalize">
-          {label}
-        </h1>
-
-        <button
-          onClick={nextMonth}
-          className="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors text-base font-bold"
-          title="Mese successivo"
-        >
-          ›
-        </button>
+      <div className="px-4 py-2.5 border-b border-slate-200 bg-white flex items-center gap-3">
+        {/* Navigatore mese (controllo segmentato) */}
+        <div className="inline-flex items-center rounded-lg border border-slate-200 overflow-hidden bg-white">
+          <button
+            onClick={prevMonth}
+            className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors text-lg leading-none"
+            title="Mese precedente"
+          >
+            ‹
+          </button>
+          <h1 className="text-sm font-semibold text-slate-800 w-40 text-center capitalize border-x border-slate-200 py-1.5 select-none">
+            {label}
+          </h1>
+          <button
+            onClick={nextMonth}
+            className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors text-lg leading-none"
+            title="Mese successivo"
+          >
+            ›
+          </button>
+        </div>
 
         {!isCurrentMonth && (
           <button
             onClick={() => { setYear(CURRENT_YEAR); setMonth(CURRENT_MONTH) }}
-            className="ml-1 text-xs text-blue-600 hover:underline"
+            className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg px-2.5 py-1.5 transition-colors"
+            title="Vai al mese corrente"
           >
-            Oggi
+            <span aria-hidden>↺</span> Oggi
           </button>
         )}
 
