@@ -43,6 +43,14 @@ export function MatriceGrid({
   }, [])
   const handleCellLeave = useCallback(() => setHovered(null), [])
 
+  // Toast per errori di salvataggio (niente più fallimenti silenziosi)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  useEffect(() => {
+    if (!saveError) return
+    const t = setTimeout(() => setSaveError(null), 5000)
+    return () => clearTimeout(t)
+  }, [saveError])
+
   useEffect(() => {
     if (!matriceLoading && !nucleoLoading && onDataReady) {
       onDataReady(operators, matrice)
@@ -65,10 +73,8 @@ export function MatriceGrid({
         updatedBy: currentUser.uid,
       })
     } catch (err) {
-      // Non lasciare che la scrittura fallisca silenziosamente: senza questo
-      // log, un errore (es. permessi, valore non valido) farebbe restare la
-      // cella su '—' senza alcun segnale per l'utente o lo sviluppatore.
       console.error('Errore salvataggio cella matrice:', err)
+      setSaveError('Errore nel salvataggio del turno. Riprova.')
     }
   }, [nucleoId, yearMonth, year, month, currentUser.uid])
 
@@ -81,6 +87,7 @@ export function MatriceGrid({
       await setNightShift(nucleoId, year, month, day, operatorId, currentUser.uid, isOverride)
     } catch (err) {
       console.error('Errore salvataggio turno notte:', err)
+      setSaveError('Errore nel salvataggio della notte. Riprova.')
     }
   }, [nucleoId, year, month, currentUser.uid])
 
@@ -139,7 +146,17 @@ export function MatriceGrid({
   }
 
   return (
-    <div className="flex-1 overflow-auto p-3" onMouseLeave={handleCellLeave}>
+    <div className="flex-1 overflow-auto p-3 relative" onMouseLeave={handleCellLeave}>
+      {saveError && (
+        <div
+          role="alert"
+          className="fixed bottom-4 right-4 z-[60] flex items-center gap-2 bg-red-600 text-white text-xs font-medium px-3 py-2 rounded-lg shadow-lg"
+        >
+          <span aria-hidden>⚠</span>
+          <span>{saveError}</span>
+          <button onClick={() => setSaveError(null)} className="ml-1 text-white/80 hover:text-white" aria-label="Chiudi">✕</button>
+        </div>
+      )}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
       {weeks.map((weekDays, wi) => {
         const weekSorted = sortForWeek(weekDays)

@@ -44,6 +44,27 @@ export default function MatricePage() {
 
   useEffect(() => subscribeAutosost(setAutosostPool), [])
 
+  // Scorciatoie da tastiera: Alt+← / Alt+→ mese prec/succ, Alt+↓ vai a oggi
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!e.altKey) return
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        if (month === 1) { setYear(y => y - 1); setMonth(12) } else setMonth(m => m - 1)
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        if (month === 12) { setYear(y => y + 1); setMonth(1) } else setMonth(m => m + 1)
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setYear(CURRENT_YEAR); setMonth(CURRENT_MONTH)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [month])
+
   if (!user) return null
 
   const nucleoId = user.nucleoId ?? 'nucleo-b'
@@ -101,7 +122,7 @@ export default function MatricePage() {
           <button
             onClick={prevMonth}
             className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors text-lg leading-none"
-            title="Mese precedente"
+            title="Mese precedente (Alt+←)"
           >
             ‹
           </button>
@@ -111,7 +132,7 @@ export default function MatricePage() {
           <button
             onClick={nextMonth}
             className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors text-lg leading-none"
-            title="Mese successivo"
+            title="Mese successivo (Alt+→)"
           >
             ›
           </button>
