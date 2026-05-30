@@ -16,7 +16,8 @@ export default function OperatoriPage() {
   const [autosost, setAutosost] = useState<AutosostOperator[]>([])
   const [showAutoModal, setShowAutoModal] = useState(false)
 
-  const nucleoId = user?.nucleoId
+  // Il coordinatore non ha un nucleo proprio: default a nucleo-b per gestire gli operatori
+  const nucleoId = user?.nucleoId ?? 'nucleo-b'
 
   useEffect(() => {
     if (!user || user.role === 'oss' || !nucleoId) return
