@@ -22,12 +22,13 @@ service cloud.firestore {
     // Users: read own profile; coordinatrice reads all
     match /users/{userId} {
       allow read: if isAuth() && (request.auth.uid == userId || isCoordinatrice());
-      // RAA can create OSS profiles in their own nucleo; only coordinatrice can update/delete
-      allow create: if isAuth() &&
-        'nucleoId' in request.resource.data &&
-        'role' in request.resource.data &&
-        request.resource.data.role == 'oss' &&
-        canWrite(request.resource.data.nucleoId);
+      // Coordinatrice can create any user (incl. RAA); RAA can create only OSS in their nucleo
+      allow create: if isCoordinatrice() ||
+        (isAuth() &&
+         'nucleoId' in request.resource.data &&
+         'role' in request.resource.data &&
+         request.resource.data.role == 'oss' &&
+         canWrite(request.resource.data.nucleoId));
       // RAA can update only the name field for OSS operators in their nucleo
       allow update: if isCoordinatrice() ||
         (isAuth() &&

@@ -21,6 +21,7 @@ export function NuovoOperatoreModal({
   const [selectedNucleoId, setSelectedNucleoId] = useState(nucleoId)
   const [hasFSCertification, setHasFSCertification] = useState(false)
   const [isAutosostituzione, setIsAutosostituzione] = useState(defaultAutosostituzione)
+  const [role, setRole] = useState<'oss' | 'raa'>('oss')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [nuclei, setNuclei] = useState<Nucleo[]>([])
@@ -82,8 +83,9 @@ export function NuovoOperatoreModal({
         nome: nome.trim(),
         cognome: cognome.trim(),
         contractType,
-        hasFSCertification,
-        isAutosostituzione,
+        hasFSCertification: role === 'raa' ? false : hasFSCertification,
+        isAutosostituzione: role === 'raa' ? false : isAutosostituzione,
+        role,
       })
       onCreated()
       onClose()
@@ -130,18 +132,35 @@ export function NuovoOperatoreModal({
             />
           </div>
 
-          {/* Tipo contratto */}
-          <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Tipo contratto *</label>
-            <select
-              value={contractType}
-              onChange={e => setContractType(e.target.value as ContractType)}
-              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
-              <option value="fulltime">Full-time</option>
-              <option value="parttime">Part-time</option>
-            </select>
-          </div>
+          {/* Ruolo — solo la Coordinatrice può creare una RAA */}
+          {isCoordinatrice && (
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Ruolo *</label>
+              <select
+                value={role}
+                onChange={e => setRole(e.target.value as 'oss' | 'raa')}
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="oss">Operatore (OSS)</option>
+                <option value="raa">RAA (responsabile nucleo)</option>
+              </select>
+            </div>
+          )}
+
+          {/* Tipo contratto — solo per operatori (non RAA) */}
+          {role !== 'raa' && (
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Tipo contratto *</label>
+              <select
+                value={contractType}
+                onChange={e => setContractType(e.target.value as ContractType)}
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="fulltime">Full-time</option>
+                <option value="parttime">Part-time</option>
+              </select>
+            </div>
+          )}
 
           {/* Nucleo — only for Coordinatrice */}
           {isCoordinatrice && (
@@ -162,7 +181,9 @@ export function NuovoOperatoreModal({
             </div>
           )}
 
-          {/* Certificazione antincendio */}
+          {/* Certificazione antincendio + autosostituzione — solo operatori */}
+          {role !== 'raa' && (
+          <>
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -189,6 +210,8 @@ export function NuovoOperatoreModal({
               Operatore di autosostituzione (jolly)
             </label>
           </div>
+          </>
+          )}
 
           {/* Live preview */}
           {username && (

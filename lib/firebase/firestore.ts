@@ -152,6 +152,7 @@ export async function createOperator(
     contractType: ContractType
     hasFSCertification: boolean
     isAutosostituzione?: boolean
+    role?: 'oss' | 'raa'
   }
 ): Promise<{ uid: string; username: string }> {
   const { generateUsername } = await import('@/lib/utils/username')
@@ -196,14 +197,17 @@ export async function createOperator(
   // the Auth account will be orphaned and must be manually deleted from the
   // Firebase Console (Authentication tab, find by email). A future Cloud
   // Function implementation would fix this by using a single transaction.
+  const role = data.role ?? 'oss'
   const batch = writeBatch(db)
   batch.set(doc(db, 'users', uid), {
     email,
     name,
-    role: 'oss',
+    role,
     nucleoId,
   })
-  if (data.isAutosostituzione) {
+  if (role === 'raa') {
+    // La RAA gestisce il nucleo: nessun documento operatore (non entra nella matrice)
+  } else if (data.isAutosostituzione) {
     // Operatore jolly: va nel pool condiviso (cross-nucleo), NON tra gli operatori
     // del nucleo, così non entra nella rotazione/generazione automatica.
     batch.set(doc(db, 'autosostituzione', uid), {
