@@ -61,21 +61,17 @@ export default function OperatoriPage() {
       <div className="flex flex-col lg:flex-row gap-6 items-start">
       <div className="flex-1 w-full max-w-3xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-bold text-slate-900">Operatori</h1>
-          <p className="text-sm text-slate-500">
-            {activeCount} attivi · {operators.length} totali
-          </p>
-        </div>
-        <button
-          onClick={() => setShowNuovoModal(true)}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
-        >
-          <span>＋</span>
-          <span>Nuovo operatore</span>
-        </button>
-      </div>
+      <h2 className="text-base font-bold text-slate-900">Operatori</h2>
+      <p className="text-sm text-slate-500 mb-3 min-h-[2.5rem]">
+        {activeCount} attivi · {operators.length} totali
+      </p>
+      <button
+        onClick={() => setShowNuovoModal(true)}
+        className="mb-3 inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
+      >
+        <span>＋</span>
+        <span>Nuovo operatore</span>
+      </button>
 
       {/* Operators list */}
       <div className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100">
@@ -127,8 +123,8 @@ export default function OperatoriPage() {
       {/* Autosostituzione pool (condiviso tra le 3 RAA) — colonna destra */}
       <div className="w-full lg:w-80 flex-shrink-0">
         <h2 className="text-base font-bold text-slate-900">Autosostituzione</h2>
-        <p className="text-sm text-slate-500 mb-3">
-          Operatori jolly condivisi tra i nuclei, usati per coprire i turni scoperti. Hanno username e password come gli altri.
+        <p className="text-sm text-slate-500 mb-3 min-h-[2.5rem]">
+          Operatori jolly condivisi tra i nuclei per coprire i turni scoperti.
         </p>
         <button
           onClick={() => setShowAutoModal(true)}
