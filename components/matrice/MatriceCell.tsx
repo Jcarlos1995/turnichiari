@@ -32,6 +32,9 @@ export function MatriceCell({ entry, shiftType, editable, onSelect, onSelectNigh
 
   const isOverride = entry?.isManualOverride === true
   const isSmonto = entry?.code === NIGHT.smonto
+  // Eccezioni/assenze: testo in rosso (lo sfondo resta quello del turno)
+  const EXCEPTION_CODES = ['F', 'ML', 'PE', '104', 'CO', 'INF', 'LU', 'AS']
+  const isException = entry?.code !== undefined && EXCEPTION_CODES.includes(entry.code)
 
   return (
     <div
@@ -42,6 +45,7 @@ export function MatriceCell({ entry, shiftType, editable, onSelect, onSelectNigh
       className={`relative h-8 rounded flex items-center justify-center text-xs font-bold select-none
         border border-black/5 transition-all
         ${editable && !isSmonto ? 'cursor-pointer hover:brightness-95 hover:shadow-sm' : 'cursor-default'}
+        ${isException ? 'text-red-600' : ''}
         ${open ? 'ring-2 ring-blue-500 ring-offset-1 z-50'
           : highlighted ? 'ring-1 ring-inset ring-blue-400/70 brightness-95' : ''}`}
       title={isSmonto ? 'Smonto notte — modifica il turno N1 del giorno precedente' : entry?.note}
