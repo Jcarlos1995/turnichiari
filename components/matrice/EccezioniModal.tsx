@@ -71,11 +71,22 @@ export function EccezioniModal({ nucleoId, year, month, operators, onClose }: Pr
               <h3 className="text-sm font-semibold text-slate-700">
                 Ferie / 104 / malattia / congedo / permessi
               </h3>
-              <button onClick={add} className="text-xs text-blue-600 hover:underline">+ Aggiungi</button>
+              <button
+                onClick={add}
+                disabled={operators.length === 0}
+                title={operators.length === 0 ? 'Aggiungi prima degli operatori' : 'Aggiungi eccezione'}
+                className="text-xs text-blue-600 hover:underline disabled:text-slate-300 disabled:no-underline disabled:cursor-not-allowed"
+              >
+                + Aggiungi
+              </button>
             </div>
 
             <div className="space-y-2 mb-4">
-              {items.length === 0 && (
+              {operators.length === 0 ? (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded p-2">
+                  Nessun operatore nel nucleo. Aggiungi prima gli operatori (sezione <strong>Operatori</strong>): le eccezioni si assegnano a un operatore.
+                </p>
+              ) : items.length === 0 && (
                 <p className="text-xs text-slate-400">Nessuna eccezione salvata per questo mese.</p>
               )}
               {items.map((e, i) => (
