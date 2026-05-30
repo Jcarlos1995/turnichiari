@@ -14,7 +14,6 @@ export default function OperatoriPage() {
   const [showNuovoModal, setShowNuovoModal] = useState(false)
   const [editingOperator, setEditingOperator] = useState<Operator | null>(null)
   const [autosost, setAutosost] = useState<AutosostOperator[]>([])
-  const [showAutoModal, setShowAutoModal] = useState(false)
   const [raaList, setRaaList] = useState<RaaUser[]>([])
   const isCoordinatrice = user?.role === 'coordinatrice'
 
@@ -69,7 +68,7 @@ export default function OperatoriPage() {
       <div className="min-w-0 lg:order-2">
       {/* Header */}
       <h2 className="text-base font-bold text-slate-900">Operatori</h2>
-      <p className="text-sm text-slate-500 mb-3 min-h-[2.5rem]">
+      <p className="text-sm text-slate-500 mb-3 min-h-[3.5rem]">
         {activeCount} attivi · {operators.length} totali
       </p>
       <button
@@ -130,16 +129,10 @@ export default function OperatoriPage() {
       {/* Autosostituzione pool (condiviso tra le 3 RAA) */}
       <div className="min-w-0 lg:order-1">
         <h2 className="text-base font-bold text-slate-900">Autosostituzione</h2>
-        <p className="text-sm text-slate-500 mb-3 min-h-[2.5rem]">
-          Operatori jolly condivisi tra i nuclei per coprire i turni scoperti.
+        <p className="text-sm text-slate-500 mb-3 min-h-[3.5rem]">
+          Operatori jolly condivisi tra i nuclei per coprire i turni scoperti. Creali con &quot;Nuovo operatore&quot; spuntando &quot;Autosostituzione&quot;.
         </p>
-        <button
-          onClick={() => setShowAutoModal(true)}
-          className="w-full mb-3 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
-        >
-          <span>＋</span>
-          <span>Nuovo operatore auto</span>
-        </button>
+        <div className="h-9 mb-3" aria-hidden />
         <div className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100">
           {autosost.length === 0 ? (
             <p className="py-6 text-center text-sm text-slate-400">Nessun operatore di autosostituzione.</p>
@@ -165,7 +158,7 @@ export default function OperatoriPage() {
       {isCoordinatrice && (
         <div className="min-w-0 lg:order-3">
           <h2 className="text-base font-bold text-slate-900">RAA</h2>
-          <p className="text-sm text-slate-500 mb-3 min-h-[2.5rem]">
+          <p className="text-sm text-slate-500 mb-3 min-h-[3.5rem]">
             Responsabili di nucleo. Creale con &quot;Nuovo operatore&quot; → Ruolo: RAA.
           </p>
           <div className="h-9 mb-3" aria-hidden />
@@ -194,17 +187,6 @@ export default function OperatoriPage() {
           currentUser={user}
           onClose={() => setShowNuovoModal(false)}
           onCreated={() => setShowNuovoModal(false)}
-        />
-      )}
-
-      {/* Nuovo operatore AUTO modal (checkbox pre-marcato) */}
-      {showAutoModal && user && nucleoId && (
-        <NuovoOperatoreModal
-          nucleoId={nucleoId}
-          currentUser={user}
-          defaultAutosostituzione
-          onClose={() => setShowAutoModal(false)}
-          onCreated={() => setShowAutoModal(false)}
         />
       )}
 
