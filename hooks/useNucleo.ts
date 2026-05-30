@@ -13,8 +13,18 @@ export function useNucleo(nucleoId: string | null) {
       .finally(() => { setLoading(false) })
   }, [nucleoId])
 
-  // Colore "fosforescente" per i turni notte (override del catalogo)
-  const NIGHT_COLORS: Record<string, string> = { N1: '#eaff00', N2: '#f2ff66' }
+  // Override colori dei turni (solo visivo; il catalogo Firestore non cambia)
+  const COLOR_OVERRIDES: Record<string, string> = {
+    N1: '#eaff00',     // notte — neon
+    N2: '#f2ff66',     // smonto — neon chiaro
+    M1: '#5eead4',     // verde petrolio (chiaro)
+    'M1.5': '#fb923c', // arancione
+    M2: '#c4b5fd',     // viola
+    MP: '#fbcfe8',     // rosa bebè
+    P1: '#d1d5db',     // grigio
+    P2: '#bae6fd',     // celeste
+    'P2.5': '#3b82f6', // blu elettrico
+  }
   const base: ShiftType[] = [
     ...(nucleo?.shiftTypes ?? []),
     ...SYSTEM_SHIFTS,
@@ -27,7 +37,7 @@ export function useNucleo(nucleoId: string | null) {
   if (!codes.has('M1.5')) base.push(M1_5_SHIFT)
   if (!codes.has('P2.5')) base.push(P2_5_SHIFT)
   const allShiftTypes: ShiftType[] = base.map(s =>
-    NIGHT_COLORS[s.code] ? { ...s, color: NIGHT_COLORS[s.code] } : s
+    COLOR_OVERRIDES[s.code] ? { ...s, color: COLOR_OVERRIDES[s.code] } : s
   )
 
   return { nucleo, allShiftTypes, loading }
