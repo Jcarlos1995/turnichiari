@@ -65,8 +65,8 @@ export default function OperatoriPage() {
         ← Matrice
       </Link>
 
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
-      <div className="flex-1 w-full min-w-0">
+      <div className={`grid grid-cols-1 gap-6 items-start ${isCoordinatrice ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
+      <div className="min-w-0">
       {/* Header */}
       <h2 className="text-base font-bold text-slate-900">Operatori</h2>
       <p className="text-sm text-slate-500 mb-3 min-h-[2.5rem]">
@@ -128,7 +128,7 @@ export default function OperatoriPage() {
       </div>
 
       {/* Autosostituzione pool (condiviso tra le 3 RAA) — colonna destra */}
-      <div className="w-full lg:w-80 flex-shrink-0">
+      <div className="min-w-0">
         <h2 className="text-base font-bold text-slate-900">Autosostituzione</h2>
         <p className="text-sm text-slate-500 mb-3 min-h-[2.5rem]">
           Operatori jolly condivisi tra i nuclei per coprire i turni scoperti.
@@ -163,7 +163,7 @@ export default function OperatoriPage() {
 
       {/* Colonna RAA — solo per la Coordinatrice */}
       {isCoordinatrice && (
-        <div className="w-full lg:w-72 flex-shrink-0">
+        <div className="min-w-0">
           <h2 className="text-base font-bold text-slate-900">RAA</h2>
           <p className="text-sm text-slate-500 mb-3 min-h-[2.5rem]">
             Responsabili di nucleo. Creale con &quot;Nuovo operatore&quot; → Ruolo: RAA.
