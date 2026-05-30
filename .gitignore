@@ -42,3 +42,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# impeccable design skill (vendored, regenerable via npx impeccable)
+.claude/skills/impeccable/
+.cursor/
+.gemini/
+.impeccable/
