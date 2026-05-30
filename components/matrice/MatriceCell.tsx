@@ -42,9 +42,18 @@ export function MatriceCell({ entry, shiftType, editable, onSelect, onSelectNigh
       style={{ backgroundColor: shiftType.color }}
       onClick={() => editable && !isSmonto && setOpen(o => !o)}
       onMouseEnter={onHover}
+      role={editable && !isSmonto ? 'button' : undefined}
+      tabIndex={editable && !isSmonto ? 0 : undefined}
+      aria-label={editable && !isSmonto ? `Turno ${entry?.code ?? 'vuoto'} — modifica` : undefined}
+      onKeyDown={(e) => {
+        if (editable && !isSmonto && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          setOpen(o => !o)
+        }
+      }}
       className={`relative h-8 rounded flex items-center justify-center text-xs font-bold select-none
         border border-black/5 transition-all
-        ${editable && !isSmonto ? 'cursor-pointer hover:brightness-95 hover:shadow-sm' : 'cursor-default'}
+        ${editable && !isSmonto ? 'cursor-pointer hover:brightness-95 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 focus-visible:z-50' : 'cursor-default'}
         ${isException ? 'text-red-600' : ''}
         ${open ? 'ring-2 ring-blue-500 ring-offset-1 z-50'
           : highlighted ? 'ring-1 ring-inset ring-blue-400/70 brightness-95' : ''}`}

@@ -24,6 +24,8 @@ export function GeneraNuovaMatriceModal({
   const [loading, setLoading] = useState(false)
   const [report, setReport] = useState<GenerationReport | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [existing, setExisting] = useState<{ cells: number; overrides: number }>({ cells: 0, overrides: 0 })
+  const [confirmed, setConfirmed] = useState(false)
 
   const monthLabel = new Date(year, month - 1).toLocaleString('it-IT', { month: 'long', year: 'numeric' })
   const yearMonth = `${year}-${String(month).padStart(2, '0')}`
@@ -31,6 +33,17 @@ export function GeneraNuovaMatriceModal({
   useEffect(() => {
     let active = true
     getExceptions(nucleoId, yearMonth).then(ex => { if (active) { setSavedExceptions(ex); setLoadingEx(false) } })
+    getMatriceMonth(nucleoId, yearMonth).then(m => {
+      if (!active) return
+      let cells = 0, overrides = 0
+      for (const days of Object.values(m)) {
+        for (const entry of Object.values(days)) {
+          cells++
+          if (entry.isManualOverride) overrides++
+        }
+      }
+      setExisting({ cells, overrides })
+    })
     return () => { active = false }
   }, [nucleoId, yearMonth])
 
@@ -97,12 +110,29 @@ export function GeneraNuovaMatriceModal({
                 : <>Userà <strong>{savedExceptions.length}</strong> eccezioni salvate per questo mese. Modificale con il pulsante <strong>&quot;Eccezioni&quot;</strong>.</>}
             </div>
 
+            {existing.cells > 0 && (
+              <label className="flex items-start gap-2 border-2 border-red-300 bg-red-50 rounded-lg p-3 mb-4 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={confirmed}
+                  onChange={e => setConfirmed(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 rounded border-slate-300 accent-red-600 flex-shrink-0"
+                />
+                <span className="text-xs text-red-700">
+                  Confermo la sovrascrittura dell&apos;intero mese.
+                  {existing.overrides > 0 && (
+                    <> <strong>Perderai {existing.overrides} modifiche manuali</strong> fatte a mano.</>
+                  )}
+                </span>
+              </label>
+            )}
+
             {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
 
             <div className="flex gap-2 justify-end">
               <button onClick={onClose} disabled={loading}
                 className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Annulla</button>
-              <button onClick={handleGenerate} disabled={loading || loadingEx}
+              <button onClick={handleGenerate} disabled={loading || loadingEx || (existing.cells > 0 && !confirmed)}
                 className="px-4 py-2 text-sm font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-700 disabled:opacity-50">
                 {loading ? 'Generazione...' : 'Genera'}
               </button>

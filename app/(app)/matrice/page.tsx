@@ -4,6 +4,7 @@ import { MatriceGrid } from '@/components/matrice/MatriceGrid'
 import { GeneraMeseModal } from '@/components/matrice/GeneraMeseModal'
 import { GeneraNuovaMatriceModal } from '@/components/matrice/GeneraNuovaMatriceModal'
 import { EccezioniModal } from '@/components/matrice/EccezioniModal'
+import { LegendaTurni } from '@/components/matrice/LegendaTurni'
 import { useAuth } from '@/hooks/useAuth'
 import { useNucleo } from '@/hooks/useNucleo'
 import { getGenerationReport, subscribeAutosost, getAutosostAssignments, setAutosostAssignments as saveAutosostAssignments, type AutosostOperator, type AutosostAssignment } from '@/lib/firebase/firestore'
@@ -161,6 +162,8 @@ export default function MatricePage() {
           </div>
         )}
       </div>
+
+      <LegendaTurni shiftTypes={allShiftTypes} />
 
       {remainingSlots.length > 0 && (
         <div className="mx-3 mt-2 border-2 border-red-400 bg-red-50 rounded-lg px-3 py-2">

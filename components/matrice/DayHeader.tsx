@@ -15,7 +15,7 @@ export function DayHeader({ day, date, isToday, isColHovered = false }: DayHeade
     <div className={`flex flex-col items-center justify-center h-9 rounded text-xs font-semibold select-none transition-colors
       ${isToday ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-400' :
         isColHovered ? 'bg-blue-100 text-blue-700' :
-        isWeekend ? 'bg-blue-50 text-blue-400' : 'bg-slate-100 text-slate-500'}`}>
+        isWeekend ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
       <span>{dayName}</span>
       <span>{day}</span>
     </div>
